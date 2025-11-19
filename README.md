@@ -4,6 +4,22 @@ A curated collection of real-world Ruby and Rails patterns extracted from produc
 
 **Context7 Library:** `/swistaczek/ruby-snippets` | [View on Context7](https://context7.com/swistaczek/ruby-snippets)
 
+### For Your CLAUDE.md
+
+Copy this to your project's `CLAUDE.md` to reference these patterns:
+
+```markdown
+## Ruby & Rails Patterns
+
+For production-ready Ruby/Rails patterns, query Context7 library: `/swistaczek/ruby-snippets`
+
+Includes 85+ patterns from Basecamp's Campfire covering:
+- ActiveRecord patterns (CurrentAttributes, concerns, STI, associations, FTS5)
+- Hotwire (Turbo Streams, Stimulus, ActionCable)
+- Controllers (lean design, authentication, Turbo responses)
+- Infrastructure (background jobs, web push, optimization)
+```
+
 ## Purpose
 
 This repository indexes production-ready code patterns from various Ruby/Rails projects, making them easily discoverable through Context7's AI-powered documentation search. Each pattern includes:
