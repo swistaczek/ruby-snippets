@@ -2,6 +2,8 @@
 
 A curated collection of real-world Ruby and Rails patterns extracted from production codebases. This repository serves as a comprehensive knowledge base for Context7, providing developers with battle-tested patterns and best practices.
 
+**Context7 Library:** `/swistaczek/ruby-snippets` | [View on Context7](https://context7.com/swistaczek/ruby-snippets)
+
 ## Purpose
 
 This repository indexes production-ready code patterns from various Ruby/Rails projects, making them easily discoverable through Context7's AI-powered documentation search. Each pattern includes:
@@ -70,11 +72,11 @@ ruby-snippets/
 
 ## Usage with Context7
 
-Once indexed, you can query these patterns through Context7:
+Query these patterns using the library ID `/swistaczek/ruby-snippets`:
 
 ```javascript
-// In your code or with Claude
-// "Show me Rails CurrentAttributes patterns"
+// Use with Context7 MCP or Claude Code
+// "Show me Rails CurrentAttributes patterns from /swistaczek/ruby-snippets"
 // "How does Basecamp implement real-time features?"
 // "Examples of SQLite full-text search in Rails"
 ```
