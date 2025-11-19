@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #fafafa;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 0.5rem;
+      margin-top: 2rem;
+    }
+
+    h3 {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 0.25rem;
+    }
+
+    .pattern {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .pattern p {
+      margin: 0.5rem 0;
+      font-size: 0.9rem;
+    }
+
+    .file {
+      color: #666;
+      font-size: 0.8rem;
+    }
+
+    pre {
+      background: #f4f4f4;
+      border: 1px solid #ddd;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      position: relative;
+    }
+
+    code {
+      background: #f0f0f0;
+      padding: 0.1rem 0.3rem;
+    }
+
+    a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .docs {
+      font-size: 0.8rem;
+      margin: 0.5rem 0;
+    }
+
+    .docs a {
+      color: #cc0000;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .docs a:hover {
+      text-decoration: underline;
+    }
+
+    .generated {
+      color: #888;
+      font-size: 0.75rem;
+      text-align: right;
+      margin-top: 2rem;
+    }
+
+    /* Interactive features styling */
+    .search-container {
+      position: sticky;
+      top: 0;
+      background: #fafafa;
+      padding: 1rem 0;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #ddd;
+      z-index: 100;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 0.75rem;
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 0.9rem;
+      border: 2px solid #ddd;
+      background: #fff;
+      color: #333;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: #0066cc;
+    }
+
+    .category-filters {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .filter-btn.active {
+      background: #0066cc;
+      color: #fff;
+      border-color: #0066cc;
+    }
+
+    .results-count {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 0.5rem;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 0.7rem;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    pre:hover .copy-btn {
+      opacity: 1;
+    }
+
+    .copy-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .copy-btn.copied {
+      background: #0066cc;
+      color: #fff;
+      border-color: #0066cc;
+    }
+
+    .pattern[data-hidden="true"] {
+      display: none;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+
+      .search-container {
+        padding: 0.5rem 0;
+      }
+
+      .filter-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>{{PROJECT_NAME}}</h1>
+  <p>{{DESCRIPTION}}</p>
+
+  <!-- Search and Filter UI -->
+  <div class="search-container">
+    <input
+      type="text"
+      class="search-box"
+      id="searchBox"
+      placeholder="Search patterns by name, description, or keyword..."
+    >
+    <div class="category-filters" id="categoryFilters">
+      <button class="filter-btn active" data-category="all">All</button>
+      <button class="filter-btn" data-category="models">Models</button>
+      <button class="filter-btn" data-category="controllers">Controllers</button>
+      <button class="filter-btn" data-category="frontend">Frontend</button>
+      <button class="filter-btn" data-category="infrastructure">Infrastructure</button>
+    </div>
+    <div class="results-count" id="resultsCount"></div>
+  </div>
+
+  <!-- Content will be inserted here -->
+  {{CONTENT}}
+
+  <div class="generated">
+    Generated: {{TIMESTAMP}} | <a href="https://github.com/swistaczek/ruby-snippets">Ruby & Rails Patterns Collection</a>
+  </div>
+
+  <script src="search.js"></script>
+</body>
+</html>

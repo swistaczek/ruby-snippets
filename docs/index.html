@@ -1,0 +1,2532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basecamp Rails Patterns - Campfire</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #fafafa;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 0.5rem;
+      margin-top: 2rem;
+    }
+
+    h3 {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 0.25rem;
+    }
+
+    .pattern {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .pattern p {
+      margin: 0.5rem 0;
+      font-size: 0.9rem;
+    }
+
+    .file {
+      color: #666;
+      font-size: 0.8rem;
+    }
+
+    pre {
+      background: #f4f4f4;
+      border: 1px solid #ddd;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      position: relative;
+    }
+
+    code {
+      background: #f0f0f0;
+      padding: 0.1rem 0.3rem;
+    }
+
+    a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .docs {
+      font-size: 0.8rem;
+      margin: 0.5rem 0;
+    }
+
+    .docs a {
+      color: #cc0000;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .docs a:hover {
+      text-decoration: underline;
+    }
+
+    .generated {
+      color: #888;
+      font-size: 0.75rem;
+      text-align: right;
+      margin-top: 2rem;
+    }
+
+    /* Interactive features styling */
+    .search-container {
+      position: sticky;
+      top: 0;
+      background: #fafafa;
+      padding: 1rem 0;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #ddd;
+      z-index: 100;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 0.75rem;
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 0.9rem;
+      border: 2px solid #ddd;
+      background: #fff;
+      color: #333;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: #0066cc;
+    }
+
+    .category-filters {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .filter-btn.active {
+      background: #0066cc;
+      color: #fff;
+      border-color: #0066cc;
+    }
+
+    .results-count {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 0.5rem;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 0.7rem;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    pre:hover .copy-btn {
+      opacity: 1;
+    }
+
+    .copy-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .copy-btn.copied {
+      background: #0066cc;
+      color: #fff;
+      border-color: #0066cc;
+    }
+
+    .pattern[data-hidden="true"] {
+      display: none;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+
+      .search-container {
+        padding: 0.5rem 0;
+      }
+
+      .filter-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Basecamp Rails Patterns - Campfire</h1>
+  <p>Real-world Ruby on Rails patterns from Basecamp's open-source Campfire chat application</p>
+
+  <!-- Search and Filter UI -->
+  <div class="search-container">
+    <input
+      type="text"
+      class="search-box"
+      id="searchBox"
+      placeholder="Search patterns by name, description, or keyword..."
+    >
+    <div class="category-filters" id="categoryFilters">
+      <button class="filter-btn active" data-category="all">All</button>
+      <button class="filter-btn" data-category="models">Models</button>
+      <button class="filter-btn" data-category="controllers">Controllers</button>
+      <button class="filter-btn" data-category="frontend">Frontend</button>
+      <button class="filter-btn" data-category="infrastructure">Infrastructure</button>
+    </div>
+    <div class="results-count" id="resultsCount"></div>
+  </div>
+
+  <!-- Content will be inserted here -->
+  <h2 id="models">Models (26 patterns)</h2>
+<div class="pattern" data-category="models" data-keywords="activesupport attributes current currentattributes data global request safe scoped state thread" data-name="current attributes">
+  <h3>Current Attributes</h3>
+  <p>Thread-safe global state using ActiveSupport::CurrentAttributes for request-scoped data.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveSupport/CurrentAttributes.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/current.rb" target="_blank">app/models/current.rb</a></div>
+  <pre><code>class Current &lt; ActiveSupport::CurrentAttributes
+  attribute :user, :request
+
+  delegate :host, :protocol, to: :request, prefix: true, allow_nil: true
+
+  def account
+    Account.first
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="better complex concerns focused into model models organization reusability split" data-name="concerns for model organization">
+  <h3>Concerns for Model Organization</h3>
+  <p>Split complex models into focused concerns for better organization and reusability.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveSupport/Concern.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/user.rb" target="_blank">app/models/user.rb</a></div>
+  <pre><code>class User &lt; ApplicationRecord
+  include Avatar, Bot, Mentionable, Role, Transferable
+
+  has_many :memberships, dependent: :delete_all
+  has_many :rooms, through: :memberships
+  has_many :reachable_messages, through: :rooms, source: :messages
+  has_many :messages, dependent: :destroy, foreign_key: :creator_id
+
+  has_secure_password validations: false
+
+  after_create_commit :grant_membership_to_open_rooms
+
+  scope :active, -&gt; { where(active: true) }
+  scope :ordered, -&gt; { order(&quot;LOWER(name)&quot;) }
+  scope :filtered_by, -&gt;(query) { where(&quot;name like ?&quot;, &quot;%#{query}%&quot;) }
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="behavior different implementations inheritance related shared single sti table types" data-name="single table inheritance">
+  <h3>Single Table Inheritance</h3>
+  <p>Use STI for related types with shared behavior but different implementations.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/association_basics.html#single-table-inheritance-sti" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/room.rb" target="_blank">app/models/room.rb</a></div>
+  <pre><code>class Room &lt; ApplicationRecord
+  scope :opens,           -&gt; { where(type: &quot;Rooms::Open&quot;) }
+  scope :closeds,         -&gt; { where(type: &quot;Rooms::Closed&quot;) }
+  scope :directs,         -&gt; { where(type: &quot;Rooms::Direct&quot;) }
+  scope :without_directs, -&gt; { where.not(type: &quot;Rooms::Direct&quot;) }
+
+  def open?
+    is_a?(Rooms::Open)
+  end
+
+  def closed?
+    is_a?(Rooms::Closed)
+  end
+
+  def direct?
+    is_a?(Rooms::Direct)
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="find_or_create pattern patterns resource singleton sti subclasses unique within" data-name="sti singleton pattern">
+  <h3>STI Singleton Pattern</h3>
+  <p>Use find_or_create for unique resource patterns within STI subclasses.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Relation.html#method-i-find_or_create_by" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/rooms/direct.rb" target="_blank">app/models/rooms/direct.rb</a></div>
+  <pre><code>class Rooms::Direct &lt; Room
+  class &lt;&lt; self
+    def find_or_create_for(users)
+      find_for(users) || create_for({}, users: users)
+    end
+
+    private
+      def find_for(users)
+        all.joins(:users).detect do |room|
+          Set.new(room.user_ids) == Set.new(users.pluck(:id))
+        end
+      end
+  end
+
+  def default_involvement
+    &quot;everything&quot;
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="auto automatic behavior changes grant grants membership override sti subclass type when" data-name="sti auto-grant behavior">
+  <h3>STI Auto-Grant Behavior</h3>
+  <p>Override STI subclass with automatic membership grants when type changes.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Callbacks.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/rooms/open.rb" target="_blank">app/models/rooms/open.rb</a></div>
+  <pre><code>class Rooms::Open &lt; Room
+  after_save_commit :grant_access_to_all_users
+
+  private
+    def grant_access_to_all_users
+      memberships.grant_to(User.active) if type_previously_changed?(to: &quot;Rooms::Open&quot;)
+    end
+end
+
+# Automatically grants access to all users when room becomes &quot;open&quot;</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="add association associations custom directly domain extensions methods operations specific" data-name="association extensions">
+  <h3>Association Extensions</h3>
+  <p>Add custom methods directly to associations for domain-specific operations.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/association_basics.html#association-extensions" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/room.rb" target="_blank">app/models/room.rb</a></div>
+  <pre><code>has_many :memberships, dependent: :delete_all do
+  def grant_to(users)
+    room = proxy_association.owner
+    Membership.insert_all(Array(users).collect { |user|
+      { room_id: room.id, user_id: user.id, involvement: room.default_involvement }
+    })
+  end
+
+  def revoke_from(users)
+    destroy_by user: users
+  end
+
+  def revise(granted: [], revoked: [])
+    transaction do
+      grant_to(granted) if granted.present?
+      revoke_from(revoked) if revoked.present?
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="associations attributes belongs_to current default defaults sensible set" data-name="default associations">
+  <h3>Default Associations</h3>
+  <p>Set sensible defaults for belongs_to associations using Current attributes.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/association_basics.html#options-for-belongs-to" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/message.rb" target="_blank">app/models/message.rb</a></div>
+  <pre><code>class Message &lt; ApplicationRecord
+  include Attachment, Broadcasts, Mentionee, Pagination, Searchable
+
+  belongs_to :room, touch: true
+  belongs_to :creator, class_name: &quot;User&quot;, default: -&gt; { Current.user }
+
+  has_many :boosts, dependent: :destroy
+  has_rich_text :body
+
+  before_create -&gt; { self.client_message_id ||= Random.uuid }
+  after_create_commit -&gt; { room.receive(self) }
+
+  scope :ordered, -&gt; { order(:created_at) }
+  scope :with_creator, -&gt; { preload(creator: :avatar_attachment) }
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="automatically change children option parent propagation timestamps touch update updates when" data-name="touch propagation for parent updates">
+  <h3>Touch Propagation for Parent Updates</h3>
+  <p>Automatically update parent timestamps when children change using touch option.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Persistence.html#method-i-touch" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/boost.rb" target="_blank">app/models/boost.rb</a></div>
+  <pre><code>class Boost &lt; ApplicationRecord
+  belongs_to :message, touch: true
+  belongs_to :booster, class_name: &quot;User&quot;, default: -&gt; { Current.user }
+
+  scope :ordered, -&gt; { order(:created_at) }
+end
+
+# When boost is created/updated/destroyed, message.updated_at is also updated
+# Useful for cache invalidation and conditional GET</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="automatic connection counters increment timestamps touch tracking updating while" data-name="increment with automatic touch">
+  <h3>Increment with Automatic Touch</h3>
+  <p>Increment counters while updating timestamps for connection tracking.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Persistence.html#method-i-increment-21" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/membership/connectable.rb" target="_blank">app/models/membership/connectable.rb</a></div>
+  <pre><code>def increment_connections
+  connected? ? increment!(:connections, touch: true) : update!(connections: 1)
+end
+
+def decrement_connections
+  connected? ? decrement!(:connections, touch: true) : update!(connections: 0)
+end
+
+# increment!/decrement! with touch: true updates both counter and updated_at
+# Useful for concurrent connection counting in real-time features</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="approach based cursor efficient implement pagination scopes" data-name="cursor-based pagination">
+  <h3>Cursor-Based Pagination</h3>
+  <p>Implement efficient pagination using cursor-based approach with scopes.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/active_record_querying.html#scopes" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/message/pagination.rb" target="_blank">app/models/message/pagination.rb</a></div>
+  <pre><code>module Message::Pagination
+  PAGE_SIZE = 40
+
+  included do
+    scope :last_page, -&gt; { ordered.last(PAGE_SIZE) }
+    scope :first_page, -&gt; { ordered.first(PAGE_SIZE) }
+
+    scope :before, -&gt;(message) { where(&quot;created_at &lt; ?&quot;, message.created_at) }
+    scope :after, -&gt;(message) { where(&quot;created_at &gt; ?&quot;, message.created_at) }
+
+    scope :page_before, -&gt;(message) { before(message).last_page }
+    scope :page_after, -&gt;(message) { after(message).first_page }
+  end
+
+  class_methods do
+    def page_around(message)
+      page_before(message) + [ message ] + page_after(message)
+    end
+
+    def paged?
+      count &gt; PAGE_SIZE
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="custom fts5 full index management manual search sqlite text" data-name="sqlite fts5 full-text search">
+  <h3>SQLite FTS5 Full-Text Search</h3>
+  <p>Custom full-text search using SQLite FTS5 with manual index management.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Callbacks.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/message/searchable.rb" target="_blank">app/models/message/searchable.rb</a></div>
+  <pre><code>module Message::Searchable
+  included do
+    after_create_commit  :create_in_index
+    after_update_commit  :update_in_index
+    after_destroy_commit :remove_from_index
+
+    scope :search, -&gt;(query) {
+      joins(&quot;join message_search_index idx on messages.id = idx.rowid&quot;)
+        .where(&quot;idx.body match ?&quot;, query).ordered
+    }
+  end
+
+  private
+    def create_in_index
+      execute_sql_with_binds &quot;insert into message_search_index(rowid, body) values (?, ?)&quot;, id, plain_text_body
+    end
+
+    def update_in_index
+      execute_sql_with_binds &quot;update message_search_index set body = ? where rowid = ?&quot;, plain_text_body, id
+    end
+
+    def remove_from_index
+      execute_sql_with_binds &quot;delete from message_search_index where rowid = ?&quot;, id
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="actiontext attachable content inline make mentions models rich text" data-name="actiontext attachable for @mentions">
+  <h3>ActionText Attachable for @Mentions</h3>
+  <p>Make models attachable to rich text content for inline mentions.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActionText/Attachable.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/user/mentionable.rb" target="_blank">app/models/user/mentionable.rb</a></div>
+  <pre><code>module User::Mentionable
+  include ActionText::Attachable
+
+  def to_attachable_partial_path
+    &quot;users/mention&quot;
+  end
+
+  def to_trix_content_attachment_partial_path
+    &quot;users/mention&quot;
+  end
+
+  def attachable_plain_text_representation(caption)
+    &quot;@#{name}&quot;
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="actiontext attachables body extract find mentioned mentionees parse rich text users" data-name="extract mentionees from rich text">
+  <h3>Extract Mentionees from Rich Text</h3>
+  <p>Parse ActionText body to find mentioned users from attachables.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_text_overview.html" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/message/mentionee.rb" target="_blank">app/models/message/mentionee.rb</a></div>
+  <pre><code>module Message::Mentionee
+  def mentionees
+    room.users.where(id: mentioned_users.map(&amp;:id))
+  end
+
+  private
+    def mentioned_users
+      if body.body
+        body.body.attachables.grep(User).uniq
+      else
+        []
+      end
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="activestorage attachment configure images processing variants videos" data-name="activestorage attachment variants">
+  <h3>ActiveStorage Attachment Variants</h3>
+  <p>Configure attachment variants and processing for images and videos.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/active_storage_overview.html" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/message/attachment.rb" target="_blank">app/models/message/attachment.rb</a></div>
+  <pre><code>module Message::Attachment
+  THUMBNAIL_MAX_WIDTH = 1200
+  THUMBNAIL_MAX_HEIGHT = 800
+
+  included do
+    has_one_attached :attachment do |attachable|
+      attachable.variant :thumb, resize_to_limit: [ THUMBNAIL_MAX_WIDTH, THUMBNAIL_MAX_HEIGHT ]
+    end
+  end
+
+  module ClassMethods
+    def create_with_attachment!(attributes)
+      create!(attributes).tap(&amp;:process_attachment)
+    end
+  end
+
+  def process_attachment
+    ensure_attachment_analyzed
+    process_attachment_thumbnail
+  end
+
+  private
+    def process_attachment_thumbnail
+      case
+      when attachment.video?
+        attachment.preview(format: :webp).processed
+      when attachment.representable?
+        attachment.representation(:thumb).processed
+      end
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="authorization based checks close concerns domain keep logic model role" data-name="role-based authorization in model">
+  <h3>Role-Based Authorization in Model</h3>
+  <p>Keep authorization logic close to the domain with role checks in concerns.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Enum.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/user/role.rb" target="_blank">app/models/user/role.rb</a></div>
+  <pre><code>module User::Role
+  included do
+    enum :role, %i[ member administrator bot ]
+  end
+
+  def can_administer?(record = nil)
+    administrator? || self == record&amp;.creator || record&amp;.new_record?
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="authentication based bot delivery implement pattern token users webhook" data-name="bot authentication pattern">
+  <h3>Bot Authentication Pattern</h3>
+  <p>Implement bot users with token-based authentication and webhook delivery.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/SecureToken.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/user/bot.rb" target="_blank">app/models/user/bot.rb</a></div>
+  <pre><code>module User::Bot
+  included do
+    scope :active_bots, -&gt; { active.where(role: :bot) }
+    scope :without_bots, -&gt; { where.not(role: :bot) }
+    has_one :webhook, dependent: :delete
+  end
+
+  module ClassMethods
+    def create_bot!(attributes)
+      bot_token = generate_bot_token
+      webhook_url = attributes.delete(:webhook_url)
+
+      User.create!(**attributes, bot_token: bot_token, role: :bot).tap do |user|
+        user.create_webhook!(url: webhook_url) if webhook_url
+      end
+    end
+
+    def authenticate_bot(bot_key)
+      bot_id, bot_token = bot_key.split(&quot;-&quot;)
+      active_bots.find_by(id: bot_id, bot_token: bot_token)
+    end
+
+    def generate_bot_token
+      SecureRandom.alphanumeric(12)
+    end
+  end
+
+  def bot_key
+    &quot;#{id}-#{bot_token}&quot;
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="ids proof rails signed tamper tokens url urls" data-name="signed id tokens for urls">
+  <h3>Signed ID Tokens for URLs</h3>
+  <p>Use Rails signed IDs for tamper-proof URL tokens.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/SignedId.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/user/avatar.rb" target="_blank">app/models/user/avatar.rb</a></div>
+  <pre><code>module User::Avatar
+  included do
+    has_one_attached :avatar
+  end
+
+  class_methods do
+    def from_avatar_token(sid)
+      find_signed!(sid, purpose: :avatar)
+    end
+  end
+
+  def avatar_token
+    signed_id(purpose: :avatar)
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="auto code codes formatted generate generation join secure separators" data-name="join code generation">
+  <h3>Join Code Generation</h3>
+  <p>Auto-generate secure join codes with formatted separators.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Callbacks.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/account/joinable.rb" target="_blank">app/models/account/joinable.rb</a></div>
+  <pre><code>module Account::Joinable
+  included do
+    before_create { self.join_code = generate_join_code }
+  end
+
+  def reset_join_code
+    update! join_code: generate_join_code
+  end
+
+  private
+    def generate_join_code
+      SecureRandom.alphanumeric(12).scan(/.{4}/).join(&quot;-&quot;)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="activity automatic limiting rate refresh session track tracking" data-name="session with activity tracking">
+  <h3>Session with Activity Tracking</h3>
+  <p>Track session activity with automatic refresh rate limiting.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/SecureToken.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/session.rb" target="_blank">app/models/session.rb</a></div>
+  <pre><code>class Session &lt; ApplicationRecord
+  ACTIVITY_REFRESH_RATE = 1.hour
+
+  has_secure_token
+  belongs_to :user
+
+  before_create { self.last_active_at ||= Time.now }
+
+  def self.start!(user_agent:, ip_address:)
+    create! user_agent: user_agent, ip_address: ip_address
+  end
+
+  def resume(user_agent:, ip_address:)
+    if last_active_at.before?(ACTIVITY_REFRESH_RATE.ago)
+      update! user_agent: user_agent, ip_address: ip_address, last_active_at: Time.now
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="based connection connections counting real reference scopes time track tracking ttl" data-name="connection ttl tracking">
+  <h3>Connection TTL Tracking</h3>
+  <p>Track real-time connections with TTL-based scopes and reference counting.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/active_record_querying.html#scopes" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/membership/connectable.rb" target="_blank">app/models/membership/connectable.rb</a></div>
+  <pre><code>module Membership::Connectable
+  CONNECTION_TTL = 60.seconds
+
+  included do
+    scope :connected,    -&gt; { where(connected_at: CONNECTION_TTL.ago..) }
+    scope :disconnected, -&gt; { where(connected_at: [ nil, ...CONNECTION_TTL.ago ]) }
+  end
+
+  class_methods do
+    def disconnect_all
+      connected.update_all connected_at: nil, connections: 0, updated_at: Time.current
+    end
+
+    def connect(membership, connections)
+      where(id: membership.id).update_all(connections: connections, connected_at: Time.current, unread_at: nil)
+    end
+  end
+
+  def connected?
+    connected_at? &amp;&amp; connected_at &gt;= CONNECTION_TTL.ago
+  end
+
+  def refresh_connection
+    increment_connections unless connected?
+    touch :connected_at
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="after automatically creation fixed history maintain old recent records searches self size trim trimming" data-name="self-trimming recent searches">
+  <h3>Self-Trimming Recent Searches</h3>
+  <p>Automatically trim old records after creation to maintain a fixed history size.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Callbacks.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/search.rb" target="_blank">app/models/search.rb</a></div>
+  <pre><code>class Search &lt; ApplicationRecord
+  belongs_to :user
+
+  after_create :trim_recent_searches
+
+  scope :ordered, -&gt; { order(updated_at: :desc) }
+
+  class &lt;&lt; self
+    def record(query)
+      find_or_create_by(query: query).touch
+    end
+  end
+
+  private
+    def trim_recent_searches
+      user.searches.excluding(user.searches.ordered.limit(10)).destroy_all
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="enum enums methods option prefix query readable scopes" data-name="enum with prefix">
+  <h3>Enum with Prefix</h3>
+  <p>Use enums with prefix option for readable scopes and query methods.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Enum.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/membership.rb" target="_blank">app/models/membership.rb</a></div>
+  <pre><code>class Membership &lt; ApplicationRecord
+  include Connectable
+
+  enum :involvement, %w[ invisible nothing mentions everything ].index_by(&amp;:itself), prefix: :involved_in
+
+  scope :visible, -&gt; { where.not(involvement: :invisible) }
+  scope :unread,  -&gt; { where.not(unread_at: nil) }
+
+  # Usage: membership.involved_in_everything?
+  # Scopes: Membership.involved_in_mentions
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="checking content inquiry methods pattern query readable string type" data-name="content type inquiry pattern">
+  <h3>Content Type Inquiry Pattern</h3>
+  <p>Use String#inquiry for readable type checking with query methods.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/String.html#method-i-inquiry" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/message.rb" target="_blank">app/models/message.rb</a></div>
+  <pre><code>def content_type
+  case
+  when attachment?    then &quot;attachment&quot;
+  when sound.present? then &quot;sound&quot;
+  else                     &quot;text&quot;
+  end.inquiry
+end
+
+def sound
+  plain_text_body.match(/\A\/play (?&lt;name&gt;\w+)\z/) do |match|
+    Sound.find_by_name match[:name]
+  end
+end
+
+# Usage: message.content_type.text?
+# Usage: message.content_type.sound?</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="access built data define fast index lookup memory pattern registry static" data-name="in-memory registry pattern">
+  <h3>In-Memory Registry Pattern</h3>
+  <p>Define static data with built-in lookup index for fast access.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/Enumerable.html#method-i-index_by" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/sound.rb" target="_blank">app/models/sound.rb</a></div>
+  <pre><code>class Sound
+  def self.find_by_name(name)
+    INDEX[name]
+  end
+
+  def self.names
+    INDEX.keys.sort
+  end
+
+  attr_reader :name, :asset_path, :image, :text
+
+  def initialize(name:, text: nil, image: nil)
+    @name = name
+    @asset_path = &quot;#{name}.mp3&quot;
+    @image = Image.new(**image) if image
+    @text = text
+  end
+
+  BUILTIN = [
+    new(name: &quot;bell&quot;, text: &quot;🔔&quot;),
+    new(name: &quot;crickets&quot;, text: &quot;hears crickets chirping&quot;),
+    new(name: &quot;tada&quot;, text: &quot;plays a fanfare 🏏&quot;),
+    # ... more sounds
+  ]
+
+  INDEX = BUILTIN.index_by(&amp;:name)
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="activemodel backing callbacks database validation without" data-name="activemodel without database">
+  <h3>ActiveModel without Database</h3>
+  <p>Use ActiveModel for validation and callbacks without database backing.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveModel/Model.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/opengraph/metadata.rb" target="_blank">app/models/opengraph/metadata.rb</a></div>
+  <pre><code>class Opengraph::Metadata
+  include ActiveModel::Model
+  include ActiveModel::Validations::Callbacks
+  include ActionView::Helpers::SanitizeHelper
+
+  ATTRIBUTES = %i[ title url image description ]
+  attr_accessor *ATTRIBUTES
+
+  before_validation :sanitize_fields
+
+  validates_presence_of :title, :url, :description
+  validate :ensure_valid_image_url
+
+  private
+    def sanitize_fields
+      self.title = sanitize(strip_tags(title))
+      self.description = sanitize(strip_tags(description))
+    end
+
+    def ensure_valid_image_url
+      if image.present?
+        errors.add :image, &quot;url is invalid&quot; unless Opengraph::Location.new(image).valid?
+      end
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="models module name namespace organize prefix related table under" data-name="module table name prefix">
+  <h3>Module Table Name Prefix</h3>
+  <p>Organize related models under a namespace with table prefix.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/ModelSchema/ClassMethods.html#method-i-table_name_prefix" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/push.rb" target="_blank">app/models/push.rb</a></div>
+  <pre><code>module Push
+  def self.table_name_prefix
+    &quot;push_&quot;
+  end
+end
+
+# Usage: Push::Subscription uses push_subscriptions table</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<h2 id="controllers">Controllers (16 patterns)</h2>
+<div class="pattern" data-category="controllers" data-keywords="applicationcontroller composition concerns focused keep lean minimal" data-name="lean applicationcontroller">
+  <h3>Lean ApplicationController</h3>
+  <p>Use concerns to keep ApplicationController minimal and focused on composition.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_controller_overview.html" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/application_controller.rb" target="_blank">app/controllers/application_controller.rb</a></div>
+  <pre><code>class ApplicationController &lt; ActionController::Base
+  include AllowBrowser, Authentication, Authorization, SetCurrentRequest, SetPlatform, TrackedRoomVisit, VersionHeaders
+  include Turbo::Streams::Broadcasts, Turbo::Streams::StreamName
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="authentication bot centralized concern key session support" data-name="authentication concern">
+  <h3>Authentication Concern</h3>
+  <p>Centralized authentication with session and bot key support.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_controller_overview.html#filters" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/concerns/authentication.rb" target="_blank">app/controllers/concerns/authentication.rb</a></div>
+  <pre><code>module Authentication
+  extend ActiveSupport::Concern
+  include SessionLookup
+
+  included do
+    before_action :require_authentication
+    before_action :deny_bots
+    helper_method :signed_in?
+
+    protect_from_forgery with: :exception, unless: -&gt; { authenticated_by.bot_key? }
+  end
+
+  class_methods do
+    def allow_unauthenticated_access(**options)
+      skip_before_action :require_authentication, **options
+    end
+
+    def allow_bot_access(**options)
+      skip_before_action :deny_bots, **options
+    end
+
+    def require_unauthenticated_access(**options)
+      skip_before_action :require_authentication, **options
+      before_action :restore_authentication, :redirect_signed_in_user_to_root, **options
+    end
+  end
+
+  private
+    def require_authentication
+      restore_authentication || bot_authentication || request_authentication
+    end
+
+    def set_authenticated_by(method)
+      @authenticated_by = method.to_s.inquiry
+    end
+
+    def authenticated_by
+      @authenticated_by ||= &quot;&quot;.inquiry
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="authentication extract extraction focused into logic lookup modules reusable session small" data-name="session lookup extraction">
+  <h3>Session Lookup Extraction</h3>
+  <p>Extract reusable authentication logic into small focused modules.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActionDispatch/Cookies.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/concerns/authentication/session_lookup.rb" target="_blank">app/controllers/concerns/authentication/session_lookup.rb</a></div>
+  <pre><code>module Authentication::SessionLookup
+  def find_session_by_cookie
+    if token = cookies.signed[:session_token]
+      Session.find_by(token: token)
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="built custom handling limiting rate response" data-name="rate limiting">
+  <h3>Rate Limiting</h3>
+  <p>Built-in rate limiting with custom response handling.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActionController/RateLimiting.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/sessions_controller.rb" target="_blank">app/controllers/sessions_controller.rb</a></div>
+  <pre><code>class SessionsController &lt; ApplicationController
+  allow_unauthenticated_access only: %i[ new create ]
+  rate_limit to: 10, within: 3.minutes, only: :create, with: -&gt; { render_rejection :too_many_requests }
+
+  def create
+    if user = User.active.authenticate_by(email_address: params[:email_address], password: params[:password])
+      start_new_session_for user
+      redirect_to post_authenticating_url
+    else
+      render_rejection :unauthorized
+    end
+  end
+
+  def destroy
+    remove_push_subscription
+    reset_authentication
+    redirect_to root_url
+  end
+
+  private
+    def remove_push_subscription
+      if endpoint = params[:push_subscription_endpoint]
+        Push::Subscription.destroy_by(endpoint: endpoint, user_id: Current.user.id)
+      end
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="access already authenticated away login pages redirect require signup unauthenticated users" data-name="require unauthenticated access">
+  <h3>Require Unauthenticated Access</h3>
+  <p>Redirect already-authenticated users away from login/signup pages.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_controller_overview.html#filters" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/users_controller.rb" target="_blank">app/controllers/users_controller.rb</a></div>
+  <pre><code>class UsersController &lt; ApplicationController
+  require_unauthenticated_access only: %i[ new create ]
+
+  before_action :verify_join_code, only: %i[ new create ]
+
+  def create
+    @user = User.create!(user_params)
+    start_new_session_for @user
+    redirect_to root_url
+  rescue ActiveRecord::RecordNotUnique
+    redirect_to new_session_url(email_address: user_params[:email_address])
+  end
+
+  private
+    def verify_join_code
+      head :not_found if Current.account.join_code != params[:join_code]
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="attributes automatically concern current default options populate request set url" data-name="set current request concern">
+  <h3>Set Current Request Concern</h3>
+  <p>Automatically populate Current attributes and set default URL options.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActionController/UrlFor.html#method-i-default_url_options" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/concerns/set_current_request.rb" target="_blank">app/controllers/concerns/set_current_request.rb</a></div>
+  <pre><code>module SetCurrentRequest
+  extend ActiveSupport::Concern
+
+  included do
+    before_action do
+      Current.request = request
+    end
+  end
+
+  def default_url_options
+    { host: Current.request_host, protocol: Current.request_protocol }.compact_blank
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="add all busting cache concern debugging headers information responses version" data-name="version headers concern">
+  <h3>Version Headers Concern</h3>
+  <p>Add version information to all responses for debugging and cache busting.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActionDispatch/Response.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/concerns/version_headers.rb" target="_blank">app/controllers/concerns/version_headers.rb</a></div>
+  <pre><code>module VersionHeaders
+  extend ActiveSupport::Concern
+
+  included do
+    before_action :set_version_headers
+  end
+
+  private
+    def set_version_headers
+      response.headers[&quot;X-Version&quot;] = Rails.application.config.app_version
+      response.headers[&quot;X-Rev&quot;] = Rails.application.config.git_revision
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="controller dedicated manifest pwa service stable urls worker" data-name="pwa controller for service worker">
+  <h3>PWA Controller for Service Worker</h3>
+  <p>Dedicated controller for PWA manifest and service worker with stable URLs.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_controller_overview.html" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/pwa_controller.rb" target="_blank">app/controllers/pwa_controller.rb</a></div>
+  <pre><code>class PwaController &lt; ApplicationController
+  allow_unauthenticated_access
+  skip_forgery_protection
+
+  # We need a stable URL at the root, so we can&#x27;t use the regular asset path here.
+  def service_worker
+  end
+
+  # Need ERB interpolation for paths, so can&#x27;t use asset path here either.
+  def manifest
+  end
+end
+
+# Routes:
+# get &quot;webmanifest&quot;    =&gt; &quot;pwa#manifest&quot;
+# get &quot;service-worker&quot; =&gt; &quot;pwa#service_worker&quot;</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="better cookies last remember room tracked user visit visited" data-name="tracked room visit">
+  <h3>Tracked Room Visit</h3>
+  <p>Remember user's last visited room using cookies for better UX.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActionDispatch/Cookies.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/concerns/tracked_room_visit.rb" target="_blank">app/controllers/concerns/tracked_room_visit.rb</a></div>
+  <pre><code>module TrackedRoomVisit
+  extend ActiveSupport::Concern
+
+  included do
+    helper_method :last_room_visited
+  end
+
+  def remember_last_room_visited
+    cookies.permanent[:last_room] = @room.id
+  end
+
+  def last_room_visited
+    Current.user.rooms.find_by(id: cookies[:last_room]) || default_room
+  end
+
+  private
+    def default_room
+      Current.user.rooms.original
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="concern context controllers operate reusable room scoped that within" data-name="room scoped concern">
+  <h3>Room Scoped Concern</h3>
+  <p>Reusable concern for controllers that operate within a room context.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveSupport/Concern.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/concerns/room_scoped.rb" target="_blank">app/controllers/concerns/room_scoped.rb</a></div>
+  <pre><code>module RoomScoped
+  extend ActiveSupport::Concern
+
+  included do
+    before_action :set_room
+  end
+
+  private
+    def set_room
+      @membership = Current.user.memberships.find_by!(room_id: params[:room_id])
+      @room = @membership.room
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="becomes between coercion convert editing polymorphic runtime sti type types" data-name="sti type coercion with becomes!">
+  <h3>STI Type Coercion with becomes!</h3>
+  <p>Convert between STI types at runtime for polymorphic editing.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Persistence.html#method-i-becomes-21" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/rooms/opens_controller.rb" target="_blank">app/controllers/rooms/opens_controller.rb</a></div>
+  <pre><code>class Rooms::OpensController &lt; RoomsController
+  before_action :force_room_type, only: %i[ edit update ]
+
+  def update
+    @room.update! room_params
+    broadcast_update_room
+    redirect_to room_url(@room)
+  end
+
+  private
+    # Allows us to edit a closed room and turn it into an open one on saving
+    def force_room_type
+      @room = @room.becomes!(Rooms::Open)
+    end
+
+    def broadcast_update_room
+      broadcast_replace_to :rooms, target: [ @room, :list ], partial: &quot;users/sidebars/rooms/shared&quot;, locals: { room: @room }
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="after all broadcast broadcasting changes clients connected controllers crud operations stream turbo" data-name="turbo stream broadcasting in controllers">
+  <h3>Turbo Stream Broadcasting in Controllers</h3>
+  <p>Broadcast changes to all connected clients after CRUD operations.</p>
+  <div class="docs">Rails Docs: <a href="https://turbo.hotwired.dev/handbook/streams" target="_blank">Turbo Streams</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/messages_controller.rb" target="_blank">app/controllers/messages_controller.rb</a></div>
+  <pre><code>def create
+  set_room
+  @message = @room.messages.create_with_attachment!(message_params)
+
+  @message.broadcast_create
+  deliver_webhooks_to_bots
+rescue ActiveRecord::RecordNotFound
+  render action: :room_not_found
+end
+
+def update
+  @message.update!(message_params)
+
+  @message.broadcast_replace_to @room, :messages, target: [ @message, :presentation ], partial: &quot;messages/presentation&quot;, attributes: { maintain_scroll: true }
+  redirect_to room_message_url(@room, @message)
+end
+
+def destroy
+  @message.destroy
+  @message.broadcast_remove_to @room, :messages
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="caching conditional efficient fresh get http pagination requests when" data-name="fresh when for conditional get">
+  <h3>Fresh When for Conditional GET</h3>
+  <p>Use HTTP caching for efficient pagination requests.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActionController/ConditionalGet.html" target="_blank">API Docs</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/messages_controller.rb" target="_blank">app/controllers/messages_controller.rb</a></div>
+  <pre><code>def index
+  @messages = find_paged_messages
+
+  if @messages.any?
+    fresh_when @messages
+  else
+    head :no_content
+  end
+end
+
+private
+  def find_paged_messages
+    case
+    when params[:before].present?
+      @room.messages.with_creator.page_before(@room.messages.find(params[:before]))
+    when params[:after].present?
+      @room.messages.with_creator.page_after(@room.messages.find(params[:after]))
+    else
+      @room.messages.with_creator.last_page
+    end
+  end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="broadcast channels specific streams targeted updates user" data-name="broadcast to user streams">
+  <h3>Broadcast to User Streams</h3>
+  <p>Broadcast targeted updates to specific user channels.</p>
+  <div class="docs">Rails Docs: <a href="https://turbo.hotwired.dev/handbook/streams" target="_blank">Turbo Streams</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/rooms/directs_controller.rb" target="_blank">app/controllers/rooms/directs_controller.rb</a></div>
+  <pre><code>def create
+  room = Rooms::Direct.find_or_create_for(selected_users)
+
+  broadcast_create_room(room)
+  redirect_to room_url(room)
+end
+
+private
+  def broadcast_create_room(room)
+    room.memberships.each do |membership|
+      membership.broadcast_prepend_to membership.user, :rooms, target: :direct_rooms, partial: &quot;users/sidebars/rooms/direct&quot;
+    end
+  end
+
+  def selected_users
+    User.where(id: selected_users_ids.including(Current.user.id))
+  end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="characters non queries query removing sanitization sanitize search word" data-name="search with query sanitization">
+  <h3>Search with Query Sanitization</h3>
+  <p>Sanitize search queries by removing non-word characters.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_controller_overview.html" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/searches_controller.rb" target="_blank">app/controllers/searches_controller.rb</a></div>
+  <pre><code>class SearchesController &lt; ApplicationController
+  before_action :set_messages
+
+  def index
+    @query = query if query.present?
+    @recent_searches = Current.user.searches.ordered
+    @return_to_room = last_room_visited
+  end
+
+  def create
+    Current.user.searches.record(query)
+    redirect_to searches_url(q: query)
+  end
+
+  private
+    def set_messages
+      if query.present?
+        @messages = Current.user.reachable_messages.search(query).last(100)
+      else
+        @messages = Message.none
+      end
+    end
+
+    def query
+      params[:q]&amp;.gsub(/[^[:word:]]/, &quot; &quot;)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="api based content fallback json results return validation" data-name="json api with fallback">
+  <h3>JSON API with Fallback</h3>
+  <p>Return JSON or no content based on validation results.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/layouts_and_rendering.html" target="_blank">Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/controllers/unfurl_links_controller.rb" target="_blank">app/controllers/unfurl_links_controller.rb</a></div>
+  <pre><code>class UnfurlLinksController &lt; ApplicationController
+  def create
+    opengraph = Opengraph::Metadata.from_url(url_param)
+
+    if opengraph.valid?
+      render json: opengraph
+    else
+      head :no_content
+    end
+  end
+
+  private
+    def url_param
+      params.require(:url)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<h2 id="frontend">Frontend (Hotwire) (26 patterns)</h2>
+<div class="pattern" data-category="frontend" data-keywords="append containers content dom existing new stream streams turbo" data-name="turbo stream append">
+  <h3>Turbo Stream Append</h3>
+  <p>Append new content to existing DOM containers with Turbo Streams.</p>
+  <div class="docs">Rails Docs: <a href="https://turbo.hotwired.dev/handbook/streams" target="_blank">Turbo Streams</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/views/messages/create.turbo_stream.erb" target="_blank">app/views/messages/create.turbo_stream.erb</a></div>
+  <pre><code>&lt;%= turbo_stream.append dom_id(@message.room, :messages), @message %&gt;</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="broadcast broadcasting concern concerns encapsulate logic model" data-name="model broadcast concern">
+  <h3>Model Broadcast Concern</h3>
+  <p>Encapsulate broadcasting logic in model concerns.</p>
+  <div class="docs">Rails Docs: <a href="https://turbo.hotwired.dev/handbook/streams" target="_blank">Turbo Streams</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/message/broadcasts.rb" target="_blank">app/models/message/broadcasts.rb</a></div>
+  <pre><code>module Message::Broadcasts
+  def broadcast_create
+    broadcast_append_to room, :messages, target: [ room, :messages ]
+    ActionCable.server.broadcast(&quot;unread_rooms&quot;, { roomId: room.id })
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="communication connect controller controllers cross outlets stimulus" data-name="stimulus controller with outlets">
+  <h3>Stimulus Controller with Outlets</h3>
+  <p>Connect Stimulus controllers using outlets for cross-controller communication.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/reference/outlets" target="_blank">Stimulus Outlets</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/composer_controller.js" target="_blank">app/javascript/controllers/composer_controller.js</a></div>
+  <pre><code>export default class extends Controller {
+  static classes = [&quot;toolbar&quot;]
+  static targets = [ &quot;clientid&quot;, &quot;fields&quot;, &quot;fileList&quot;, &quot;text&quot; ]
+  static values = { roomId: Number }
+  static outlets = [ &quot;messages&quot; ]
+
+  async #submitMessage() {
+    if (this.#validInput()) {
+      const clientMessageId = this.#generateClientId()
+
+      await this.messagesOutlet.insertPendingMessage(clientMessageId, this.textTarget)
+      await nextFrame()
+
+      this.clientidTarget.value = clientMessageId
+      this.element.requestSubmit()
+      this.#reset()
+    }
+  }
+
+  submitByKeyboard(event) {
+    const metaEnter = event.key == &quot;Enter&quot; &amp;&amp; (event.metaKey || event.ctrlKey)
+    const plainEnter = event.keyCode == 13 &amp;&amp; !event.shiftKey &amp;&amp; !event.isComposing
+
+    if (!this.#usingTouchDevice &amp;&amp; (metaEnter || plainEnter)) {
+      this.submit(event)
+    }
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="file handle progress tracking upload uploads xmlhttprequest" data-name="file upload with progress">
+  <h3>File Upload with Progress</h3>
+  <p>Handle file uploads with XMLHttpRequest for progress tracking.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/security.html#csrf-countermeasures" target="_blank">CSRF Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/models/file_uploader.js" target="_blank">app/javascript/models/file_uploader.js</a></div>
+  <pre><code>export default class FileUploader {
+  constructor(file, url, clientMessageId, progressCallback) {
+    this.file = file
+    this.url = url
+    this.clientMessageId = clientMessageId
+    this.progressCallback = progressCallback
+  }
+
+  upload() {
+    const formdata = new FormData()
+    formdata.append(&quot;message[attachment]&quot;, this.file)
+    formdata.append(&quot;message[client_message_id]&quot;, this.clientMessageId)
+
+    const req = new XMLHttpRequest()
+    req.open(&quot;POST&quot;, this.url)
+    req.setRequestHeader(&quot;X-CSRF-Token&quot;, document.querySelector(&quot;meta[name=csrf-token]&quot;).content)
+    req.upload.addEventListener(&quot;progress&quot;, this.#uploadProgress.bind(this))
+
+    const result = new Promise((resolve, reject) =&gt; {
+      req.addEventListener(&quot;readystatechange&quot;, () =&gt; {
+        if (req.readyState === XMLHttpRequest.DONE) {
+          req.status &lt; 400 ? resolve(req.response) : reject()
+        }
+      })
+    })
+
+    req.send(formdata)
+    return result
+  }
+
+  #uploadProgress(event) {
+    if (event.lengthComputable) {
+      const percent = Math.round((event.loaded / event.total) * 100)
+      this.progressCallback(percent, this.clientMessageId, this.file)
+    }
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="before client confirmation message messages optimistic render rendering server templates" data-name="client message optimistic rendering">
+  <h3>Client Message Optimistic Rendering</h3>
+  <p>Render optimistic UI for messages before server confirmation using templates.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/handbook/introduction" target="_blank">Stimulus</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/models/client_message.js" target="_blank">app/javascript/models/client_message.js</a></div>
+  <pre><code>const EMOJI_MATCHER = /^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\uFE0F)+$/gu
+
+export default class ClientMessage {
+  #template
+
+  constructor(template) {
+    this.#template = template
+  }
+
+  render(clientMessageId, node) {
+    const now = new Date()
+    const body = this.#contentFromNode(node)
+
+    return this.#createFromTemplate({
+      clientMessageId,
+      body,
+      messageTimestamp: Math.floor(now.getTime()),
+      messageDatetime: now.toISOString(),
+      messageClasses: this.#containsOnlyEmoji(node.textContent) ? &quot;message--emoji&quot; : &quot;&quot;,
+    })
+  }
+
+  update(clientMessageId, body) {
+    const element = this.#findWithId(clientMessageId).querySelector(&quot;.message__body-content&quot;)
+    if (element) element.innerHTML = body
+  }
+
+  failed(clientMessageId) {
+    const element = this.#findWithId(clientMessageId)
+    if (element) element.classList.add(&quot;message--failed&quot;)
+  }
+
+  #createFromTemplate(data) {
+    let html = this.#template.innerHTML
+    for (const key in data) {
+      html = html.replaceAll(`$${key}$`, data[key])
+    }
+    return html
+  }
+
+  #containsOnlyEmoji(text) {
+    return text?.match(EMOJI_MATCHER)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="day format formatting highlighting mention message messages separators threading" data-name="message formatting with threading">
+  <h3>Message Formatting with Threading</h3>
+  <p>Format messages with threading, mention highlighting, and day separators.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/handbook/introduction" target="_blank">Stimulus</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/models/message_formatter.js" target="_blank">app/javascript/models/message_formatter.js</a></div>
+  <pre><code>const THREADING_TIME_WINDOW_MILLISECONDS = 5 * 60 * 1000 // 5 minutes
+
+export default class MessageFormatter {
+  #userId
+  #classes
+  #dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: &quot;short&quot; })
+
+  constructor(userId, classes) {
+    this.#userId = userId
+    this.#classes = classes
+  }
+
+  format(message, threadstyle) {
+    this.#setMeClass(message)
+    this.#highlightMentions(message)
+    this.#threadMessage(message)
+    this.#setFirstOfDayClass(message)
+    this.#makeVisible(message)
+  }
+
+  #threadMessage(message) {
+    if (message.previousElementSibling) {
+      const isSameUser = message.previousElementSibling.dataset.userId == message.dataset.userId
+      const previousMessageIsRecent = this.#previousMessageIsRecent(message)
+
+      message.classList.toggle(this.#classes.threaded, isSameUser &amp;&amp; previousMessageIsRecent)
+    }
+  }
+
+  #previousMessageIsRecent(message) {
+    const previousTimestamp = message.previousElementSibling.dataset.messageTimestamp
+    const threadTimestamp = message.dataset.messageTimestamp
+    return Math.abs(previousTimestamp - threadTimestamp) &lt;= THREADING_TIME_WINDOW_MILLISECONDS
+  }
+
+  #highlightMentions(message) {
+    const mentionsCurrentUser = message.querySelector(`.mention img[src^=&quot;/users/${Current.user.id}/avatar&quot;]`) !== null
+    message.classList.toggle(this.#classes.mentioned, mentionsCurrentUser)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="browser cookie cookies getting helpers management setting simple utilities" data-name="cookie management helpers">
+  <h3>Cookie Management Helpers</h3>
+  <p>Simple utilities for getting and setting browser cookies.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/handbook/introduction" target="_blank">Stimulus</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/lib/cookie.js" target="_blank">app/javascript/lib/cookie.js</a></div>
+  <pre><code>export function getCookie(name) {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(&#x27;;&#x27;).shift()
+}
+
+export function setCookie(name, value, days = 365) {
+  const expires = new Date()
+  expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000))
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`
+}
+
+// Usage:
+// setCookie(&quot;notifications_dismissed&quot;, &quot;true&quot;)
+// getCookie(&quot;notifications_dismissed&quot;)</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="controller dispatch drag drop event file simple stimulus" data-name="drag and drop controller">
+  <h3>Drag and Drop Controller</h3>
+  <p>Simple Stimulus controller for file drag and drop with event dispatch.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/reference/controllers" target="_blank">Stimulus Controllers</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/drop_target_controller.js" target="_blank">app/javascript/controllers/drop_target_controller.js</a></div>
+  <pre><code>export default class extends Controller {
+  dragenter(event) {
+    event.preventDefault()
+  }
+
+  dragover(event) {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = &quot;copy&quot;
+  }
+
+  drop(event) {
+    event.preventDefault()
+    this.dispatch(&quot;drop&quot;, { detail: { files: event.dataTransfer.files }})
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="actioncable indicators notifications real stimulus throttling time typing" data-name="typing notifications with actioncable">
+  <h3>Typing Notifications with ActionCable</h3>
+  <p>Real-time typing indicators using ActionCable and Stimulus with throttling.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_cable_overview.html" target="_blank">ActionCable Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/typing_notifications_controller.js" target="_blank">app/javascript/controllers/typing_notifications_controller.js</a></div>
+  <pre><code>export default class extends Controller {
+  static targets = [ &quot;author&quot;, &quot;indicator&quot; ]
+  static classes = [ &quot;active&quot; ]
+
+  async connect() {
+    this.tracker = new TypingTracker(this.#update.bind(this))
+
+    this.channel = await cable.subscribeTo(
+      { channel: &quot;TypingNotificationsChannel&quot;, room_id: Current.room.id },
+      { received: this.#received.bind(this) }
+    )
+  }
+
+  start({ target }) {
+    if (target.value) {
+      this.#throttledSend(&quot;start&quot;)
+    } else {
+      this.#send(&quot;stop&quot;)
+    }
+  }
+
+  #received({ action, user }) {
+    if (user.id !== Current.user.id) {
+      action === &quot;start&quot; ? this.tracker.add(user.name) : this.tracker.remove(user.name)
+    }
+  }
+
+  #throttledSend = throttle(action =&gt; this.#send(action))
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="automatic cleanup model multiple timeout track tracker typing users" data-name="typing tracker model">
+  <h3>Typing Tracker Model</h3>
+  <p>Track multiple typing users with automatic timeout cleanup.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/handbook/introduction" target="_blank">Stimulus</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/models/typing_tracker.js" target="_blank">app/javascript/models/typing_tracker.js</a></div>
+  <pre><code>const REFRESH_INTERVAL = 1000
+const TYPING_TIMEOUT = 5000
+
+export default class TypingTracker {
+  constructor(callback) {
+    this.callback = callback
+    this.currentlyTyping = {}
+    this.timer = setInterval(this.#refresh.bind(this), REFRESH_INTERVAL)
+  }
+
+  add(name) {
+    this.currentlyTyping[name] = Date.now()
+    this.#refresh()
+  }
+
+  remove(name) {
+    delete this.currentlyTyping[name]
+    this.#refresh()
+  }
+
+  #refresh() {
+    this.#purgeInactive()
+    const names = Object.keys(this.currentlyTyping).sort()
+    this.callback(names.length &gt; 0 ? `${names.join(&quot;, &quot;)}` : null)
+  }
+
+  #purgeInactive() {
+    const cutoff = Date.now() - TYPING_TIMEOUT
+    this.currentlyTyping = Object.fromEntries(
+      Object.entries(this.currentlyTyping).filter(([_name, timestamp]) =&gt; timestamp &gt; cutoff)
+    )
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="api heartbeats page periodic presence track tracking user visibility" data-name="presence tracking with visibility api">
+  <h3>Presence Tracking with Visibility API</h3>
+  <p>Track user presence using Page Visibility API and periodic heartbeats.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/handbook/introduction" target="_blank">Stimulus Handbook</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/presence_controller.js" target="_blank">app/javascript/controllers/presence_controller.js</a></div>
+  <pre><code>const REFRESH_INTERVAL = 50 * 1000 // 50 seconds
+const VISIBILITY_CHANGE_DELAY = 5000 // 5 seconds
+
+export default class extends Controller {
+  async connect() {
+    this.channel = await cable.subscribeTo({ channel: &quot;PresenceChannel&quot;, room_id: Current.room.id }, {
+      connected: this.#websocketConnected,
+      disconnected: this.#websocketDisconnected
+    })
+    this.wasVisible = true
+    await nextFrame()
+    this.dispatch(&quot;present&quot;, { detail: { roomId: Current.room.id } })
+  }
+
+  #visible = async () =&gt; {
+    await delay(VISIBILITY_CHANGE_DELAY)
+
+    if (this.connected &amp;&amp; this.#isVisible &amp;&amp; !this.wasVisible) {
+      this.channel.send({ action: &quot;present&quot; })
+      this.#startRefreshTimer()
+      this.wasVisible = true
+    }
+  }
+
+  #refresh = () =&gt; {
+    this.channel.send({ action: &quot;refresh&quot; })
+  }
+
+  get #isVisible() {
+    return document.visibilityState === &quot;visible&quot;
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="automatic autoscroll manage manager position preservation scroll scrolling" data-name="scroll manager with autoscroll">
+  <h3>Scroll Manager with Autoscroll</h3>
+  <p>Manage scroll position with automatic scrolling and position preservation.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/handbook/introduction" target="_blank">Stimulus Handbook</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/models/scroll_manager.js" target="_blank">app/javascript/models/scroll_manager.js</a></div>
+  <pre><code>const AUTO_SCROLL_THRESHOLD = 100
+
+export default class ScrollManager {
+  static #pendingOperations = Promise.resolve()
+
+  constructor(container) {
+    this.#container = container
+  }
+
+  async autoscroll(forceScroll, render = () =&gt; {}) {
+    return this.#appendOperation(async () =&gt; {
+      const wasNearEnd = this.#scrolledNearEnd
+
+      await render()
+
+      if (wasNearEnd || forceScroll) {
+        this.#container.scrollTop = this.#container.scrollHeight
+        return true
+      } else {
+        return false
+      }
+    })
+  }
+
+  async keepScroll(top, render) {
+    return this.#appendOperation(async () =&gt; {
+      const scrollTop = this.#container.scrollTop
+      const scrollHeight = this.#container.scrollHeight
+
+      await render()
+
+      if (top) {
+        this.#container.scrollTop = scrollTop + (this.#container.scrollHeight - scrollHeight)
+      } else {
+        this.#container.scrollTop = scrollTop
+      }
+    })
+  }
+
+  get #scrolledNearEnd() {
+    return this.#distanceScrolledFromEnd &lt;= AUTO_SCROLL_THRESHOLD
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="infinite intersectionobserver pagination scroll" data-name="intersectionobserver pagination">
+  <h3>IntersectionObserver Pagination</h3>
+  <p>Use IntersectionObserver for infinite scroll pagination.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/handbook/introduction" target="_blank">Stimulus Handbook</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/models/message_paginator.js" target="_blank">app/javascript/models/message_paginator.js</a></div>
+  <pre><code>class ScrollTracker {
+  constructor(container, callback) {
+    this.#container = container
+    this.#callback = callback
+    this.#intersectionObserver = new IntersectionObserver(this.#handleIntersection.bind(this), { root: container })
+    this.#mutationObserver = new MutationObserver(this.#childrenChanged.bind(this))
+
+    this.#mutationObserver.observe(container, { childList: true })
+  }
+
+  #handleIntersection(entries) {
+    for (const entry of entries) {
+      const isFirst = entry.target === this.#container.firstElementChild
+      const significantReveal = (isFirst &amp;&amp; this.#firstChildWasHidden) || !isFirst
+
+      if (entry.isIntersecting &amp;&amp; significantReveal) {
+        this.#callback(entry.target)
+      }
+    }
+  }
+}
+
+export default class MessagePaginator {
+  async #addPage(params, top) {
+    const resp = await this.#fetchPage(params)
+
+    if (resp.statusCode === 200) {
+      const page = await this.#formatPage(resp)
+      keepScroll(this.#container, top, () =&gt; insertHTMLFragment(page, this.#container, top))
+      this.trimExcessMessages(!top)
+    }
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="abstraction autocomplete debounced debouncing handler implement search" data-name="autocomplete with debouncing">
+  <h3>Autocomplete with Debouncing</h3>
+  <p>Implement autocomplete with debounced search and handler abstraction.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/reference/controllers" target="_blank">Stimulus Controllers Reference</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/autocomplete_controller.js" target="_blank">app/javascript/controllers/autocomplete_controller.js</a></div>
+  <pre><code>export default class extends Controller {
+  static targets = [ &quot;select&quot;, &quot;input&quot; ]
+  static values = { url: String }
+
+  initialize() {
+    this.search = debounce(this.search.bind(this), 300)
+  }
+
+  connect() {
+    this.#installHandler()
+    this.inputTarget.focus()
+  }
+
+  search(event) {
+    this.#handler.search(event.target.value)
+  }
+
+  didPressKey(event) {
+    if (event.key == &quot;Backspace&quot; &amp;&amp; this.inputTarget.value == &quot;&quot;) {
+      this.#handler.removeLastSelection()
+    }
+  }
+
+  #installHandler() {
+    this.#handler = new AutocompleteHandler(this.inputTarget, this.selectTarget, this.urlValue)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="async debounce functions helpers javascript throttle timing utility" data-name="javascript timing helpers">
+  <h3>JavaScript Timing Helpers</h3>
+  <p>Utility functions for throttle, debounce, and async timing.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/handbook/introduction" target="_blank">Stimulus Handbook</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/helpers/timing_helpers.js" target="_blank">app/javascript/helpers/timing_helpers.js</a></div>
+  <pre><code>export function throttle(fn, delay = 1000) {
+  let timeoutId = null
+
+  return (...args) =&gt; {
+    if (!timeoutId) {
+      fn(...args)
+      timeoutId = setTimeout(() =&gt; timeoutId = null, delay)
+    }
+  }
+}
+
+export function debounce(fn, delay = 1000) {
+  let timeoutId = null
+
+  return (...args) =&gt; {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() =&gt; fn.apply(this, args), delay)
+  }
+}
+
+export function nextFrame() {
+  return new Promise(requestAnimationFrame)
+}
+
+export function delay(ms) {
+  return new Promise(resolve =&gt; setTimeout(resolve, ms))
+}
+
+export function onNextEventLoopTick(callback) {
+  setTimeout(callback, 0)
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="dom functions helper html manipulation parsing preservation reusable scroll utilities" data-name="dom helper functions">
+  <h3>DOM Helper Functions</h3>
+  <p>Reusable DOM manipulation utilities for scroll preservation and HTML parsing.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/handbook/introduction" target="_blank">Stimulus Handbook</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/helpers/dom_helpers.js" target="_blank">app/javascript/helpers/dom_helpers.js</a></div>
+  <pre><code>export function escapeHTML(html) {
+  const div = document.createElement(&quot;div&quot;)
+  div.textContent = html
+  return div.innerHTML
+}
+
+export function parseHTMLFragment(html) {
+  const template = document.createElement(&quot;template&quot;)
+  template.innerHTML = html
+  return template.content
+}
+
+export async function keepScroll(container, top, fn) {
+  pauseInertiaScroll(container)
+
+  const scrollTop = container.scrollTop
+  const scrollHeight = container.scrollHeight
+
+  await fn()
+
+  if (top) {
+    container.scrollTop = scrollTop + (container.scrollHeight - scrollHeight)
+  } else {
+    container.scrollTop = scrollTop
+  }
+}
+
+export function ignoringBriefDisconnects(element, fn) {
+  requestAnimationFrame(() =&gt; {
+    if (!element.isConnected) fn()
+  })
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="behavior callbacks connected disconnected lifecycle reactive stimulus target" data-name="stimulus lifecycle callbacks">
+  <h3>Stimulus Lifecycle Callbacks</h3>
+  <p>Use target connected/disconnected callbacks for reactive behavior.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/reference/lifecycle-callbacks" target="_blank">Stimulus Lifecycle Callbacks</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/messages_controller.js" target="_blank">app/javascript/controllers/messages_controller.js</a></div>
+  <pre><code>export default class extends Controller {
+  static targets = [ &quot;latest&quot;, &quot;message&quot;, &quot;body&quot;, &quot;messages&quot;, &quot;template&quot; ]
+  static classes = [ &quot;firstOfDay&quot;, &quot;formatted&quot;, &quot;me&quot;, &quot;mentioned&quot;, &quot;threaded&quot; ]
+
+  messageTargetConnected(target) {
+    this.#formatter.format(target, ThreadStyle.thread)
+  }
+
+  bodyTargetConnected(target) {
+    this.#formatter.formatBody(target)
+  }
+
+  async editMyLastMessage() {
+    const editorEmpty = document.querySelector(&quot;#composer trix-editor&quot;).matches(&quot;:empty&quot;)
+
+    if (editorEmpty &amp;&amp; this.#paginator.upToDate) {
+      this.#myLastMessage?.querySelector(&quot;.message__edit-btn&quot;)?.click()
+    }
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="actions behavior custom customize intercept rendering stream turbo" data-name="custom turbo stream actions">
+  <h3>Custom Turbo Stream Actions</h3>
+  <p>Intercept and customize Turbo Stream rendering behavior.</p>
+  <div class="docs">Rails Docs: <a href="https://turbo.hotwired.dev/handbook/streams" target="_blank">Turbo Streams Handbook</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/messages_controller.js" target="_blank">app/javascript/controllers/messages_controller.js</a></div>
+  <pre><code>async beforeStreamRender(event) {
+  const target = event.detail.newStream.getAttribute(&quot;target&quot;)
+
+  if (target === this.messagesTarget.id) {
+    const render = event.detail.render
+
+    event.detail.render = async (streamElement) =&gt; {
+      const didScroll = await this.#scrollManager.autoscroll(false, async () =&gt; {
+        await render(streamElement)
+        await nextEventLoopTick()
+
+        this.#positionLastMessage()
+        this.#playSoundForLastMessage()
+        this.#paginator.trimExcessMessages(true)
+      })
+      if (!didScroll) {
+        this.latestTarget.hidden = false
+      }
+    }
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="content maintain position preserve render scroll stream streams turbo update when" data-name="maintain scroll on stream render">
+  <h3>Maintain Scroll on Stream Render</h3>
+  <p>Preserve scroll position when Turbo Streams update content.</p>
+  <div class="docs">Rails Docs: <a href="https://turbo.hotwired.dev/handbook/streams" target="_blank">Turbo Streams Handbook</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/maintain_scroll_controller.js" target="_blank">app/javascript/controllers/maintain_scroll_controller.js</a></div>
+  <pre><code>export default class extends Controller {
+  #scrollManager
+
+  connect() {
+    this.#scrollManager = new ScrollManager(this.element)
+  }
+
+  beforeStreamRender(event) {
+    const shouldKeepScroll = event.detail.newStream.hasAttribute(&quot;maintain_scroll&quot;)
+    const render = event.detail.render
+    const target = event.detail.newStream.getAttribute(&quot;target&quot;)
+    const targetElement = document.getElementById(target)
+
+    if (this.element.contains(targetElement) &amp;&amp; shouldKeepScroll) {
+      const top = this.#isAboveFold(targetElement)
+      event.detail.render = async (streamElement) =&gt; {
+        this.#scrollManager.keepScroll(top, () =&gt; render(streamElement))
+      }
+    }
+  }
+
+  #isAboveFold(element) {
+    return element.getBoundingClientRect().top &lt; this.element.clientHeight
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="conditions containers prevent race stream streaming turbo unsubscribe updates" data-name="turbo streaming unsubscribe">
+  <h3>Turbo Streaming Unsubscribe</h3>
+  <p>Unsubscribe containers from Turbo Stream updates to prevent race conditions.</p>
+  <div class="docs">Rails Docs: <a href="https://turbo.hotwired.dev/handbook/streams" target="_blank">Turbo Streams Handbook</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/turbo_streaming_controller.js" target="_blank">app/javascript/controllers/turbo_streaming_controller.js</a></div>
+  <pre><code>export default class extends Controller {
+  static targets = [ &quot;container&quot; ]
+
+  unsubscribe() {
+    this.containerTarget.removeAttribute(&quot;id&quot;)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="class classes controller css reusable simple toggle toggling" data-name="toggle class controller">
+  <h3>Toggle Class Controller</h3>
+  <p>Simple reusable controller for toggling CSS classes.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/reference/css-classes" target="_blank">Stimulus CSS Classes</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/toggle_class_controller.js" target="_blank">app/javascript/controllers/toggle_class_controller.js</a></div>
+  <pre><code>export default class extends Controller {
+  static classes = [ &quot;toggle&quot; ]
+
+  toggle() {
+    this.element.classList.toggle(this.toggleClass)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="management notification push registration service setup subscription web worker" data-name="web push notification setup">
+  <h3>Web Push Notification Setup</h3>
+  <p>Service worker registration and push subscription management.</p>
+  <div class="docs">Rails Docs: <a href="https://stimulus.hotwired.dev/reference/values" target="_blank">Stimulus Values</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/javascript/controllers/notifications_controller.js" target="_blank">app/javascript/controllers/notifications_controller.js</a></div>
+  <pre><code>export default class extends Controller {
+  static values = { subscriptionsUrl: String }
+
+  async attemptToSubscribe() {
+    if (this.#allowed) {
+      const registration = await this.#serviceWorkerRegistration || await this.#registerServiceWorker()
+
+      switch(Notification.permission) {
+        case &quot;denied&quot;:  { this.#revealNotAllowedNotice(); break }
+        case &quot;granted&quot;: { this.#subscribe(registration); break }
+        case &quot;default&quot;: { this.#requestPermissionAndSubscribe(registration) }
+      }
+    }
+  }
+
+  async #subscribe(registration) {
+    registration.pushManager
+      .subscribe({ userVisibleOnly: true, applicationServerKey: this.#vapidPublicKey })
+      .then(subscription =&gt; {
+        this.#syncPushSubscription(subscription)
+        this.dispatch(&quot;ready&quot;)
+      })
+  }
+
+  get #vapidPublicKey() {
+    const encodedVapidPublicKey = document.querySelector(&#x27;meta[name=&quot;vapid-public-key&quot;]&#x27;).content
+    return this.#urlBase64ToUint8Array(encodedVapidPublicKey)
+  }
+
+  #registerServiceWorker() {
+    return navigator.serviceWorker.register(&quot;/service-worker.js&quot;)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="actioncable authorization channel channels reject subscriptions unauthorized" data-name="actioncable channel with authorization">
+  <h3>ActionCable Channel with Authorization</h3>
+  <p>Reject unauthorized subscriptions in ActionCable channels.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_cable_overview.html#channels" target="_blank">Action Cable Channels Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/channels/room_channel.rb" target="_blank">app/channels/room_channel.rb</a></div>
+  <pre><code>class RoomChannel &lt; ApplicationCable::Channel
+  def subscribed
+    if @room = find_room
+      stream_for @room
+    else
+      reject
+    end
+  end
+
+  private
+    def find_room
+      current_user.rooms.find_by(id: params[:room_id])
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="actioncable authenticate authentication connection connections existing infrastructure session websocket" data-name="actioncable connection authentication">
+  <h3>ActionCable Connection Authentication</h3>
+  <p>Authenticate WebSocket connections using existing session infrastructure.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_cable_overview.html#connection-setup" target="_blank">Action Cable Connection Setup</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/channels/application_cable/connection.rb" target="_blank">app/channels/application_cable/connection.rb</a></div>
+  <pre><code>module ApplicationCable
+  class Connection &lt; ActionCable::Connection::Base
+    include Authentication::SessionLookup
+
+    identified_by :current_user
+
+    def connect
+      self.current_user = find_verified_user
+    end
+
+    private
+      def find_verified_user
+        if verified_session = find_session_by_cookie
+          verified_session.user
+        else
+          reject_unauthorized_connection
+        end
+      end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="actioncable actions broadcast channel channels client handle responses server side" data-name="channel with server-side actions">
+  <h3>Channel with Server-Side Actions</h3>
+  <p>Handle client actions in ActionCable channels and broadcast responses.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_cable_overview.html#broadcasting" target="_blank">Action Cable Broadcasting</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/channels/typing_notifications_channel.rb" target="_blank">app/channels/typing_notifications_channel.rb</a></div>
+  <pre><code>class TypingNotificationsChannel &lt; RoomChannel
+  def start(data)
+    broadcast_to @room, action: :start, user: current_user_attributes
+  end
+
+  def stop(data)
+    broadcast_to @room, action: :stop, user: current_user_attributes
+  end
+
+  private
+    def current_user_attributes
+      current_user.slice(:id, :name)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="callbacks channel channels extend functionality hooks inheritance lifecycle specialized" data-name="channel inheritance with lifecycle hooks">
+  <h3>Channel Inheritance with Lifecycle Hooks</h3>
+  <p>Extend channels with lifecycle callbacks for specialized functionality.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/action_cable_overview.html#channels" target="_blank">Action Cable Channels Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/channels/presence_channel.rb" target="_blank">app/channels/presence_channel.rb</a></div>
+  <pre><code>class PresenceChannel &lt; RoomChannel
+  on_subscribe   :present, unless: :subscription_rejected?
+  on_unsubscribe :absent,  unless: :subscription_rejected?
+
+  def present
+    membership.present
+    broadcast_read_room
+  end
+
+  def absent
+    membership.disconnected
+  end
+
+  def refresh
+    membership.refresh_connection
+  end
+
+  private
+    def broadcast_read_room
+      ActionCable.server.broadcast &quot;user_#{current_user.id}_reads&quot;, { room_id: membership.room_id }
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<h2 id="infrastructure">Infrastructure (17 patterns)</h2>
+<div class="pattern" data-category="infrastructure" data-keywords="defensive external fetch fetching http limits prevention protection redirect size ssrf urls" data-name="defensive http fetching">
+  <h3>Defensive HTTP Fetching</h3>
+  <p>Fetch external URLs with size limits, redirect protection, and SSRF prevention.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveSupport/NumberHelper.html" target="_blank">ActiveSupport::NumberHelper</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/opengraph/fetch.rb" target="_blank">app/models/opengraph/fetch.rb</a></div>
+  <pre><code>class Opengraph::Fetch
+  MAX_BODY_SIZE = 5.megabytes
+  MAX_REDIRECTS = 10
+
+  def fetch_document(url, ip: RestrictedHTTP::PrivateNetworkGuard.resolve(url.host))
+    request(url, Net::HTTP::Get, ip: ip) do |response|
+      return body_if_acceptable(response)
+    end
+  end
+
+  private
+    def size_restricted_body(response)
+      StringIO.new.tap do |body|
+        response.read_body do |chunk|
+          return nil if body.string.bytesize + chunk.bytesize &gt; MAX_BODY_SIZE
+          body &lt;&lt; chunk
+        end
+      end.string
+    end
+
+    def response_valid?(response)
+      status_valid?(response) &amp;&amp; content_type_valid?(response) &amp;&amp; content_length_valid?(response)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="addresses blocking forgery guard network prevent private protection request server side ssrf" data-name="private network guard (ssrf protection)">
+  <h3>Private Network Guard (SSRF Protection)</h3>
+  <p>Prevent server-side request forgery by blocking private IP addresses.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/security.html" target="_blank">Rails Security Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/lib/restricted_http/private_network_guard.rb" target="_blank">lib/restricted_http/private_network_guard.rb</a></div>
+  <pre><code>module RestrictedHTTP
+  class Violation &lt; StandardError; end
+
+  module PrivateNetworkGuard
+    extend self
+
+    LOCAL_IP = IPAddr.new(&quot;0.0.0.0/8&quot;)
+
+    def resolve(hostname)
+      Resolv.getaddress(hostname).tap do |ip|
+        raise Violation.new(&quot;Attempt to access private IP via #{hostname}&quot;) if ip &amp;&amp; private_ip?(ip)
+      end
+    end
+
+    def private_ip?(ip)
+      IPAddr.new(ip).then do |ipaddr|
+        ipaddr.private? || ipaddr.loopback? || LOCAL_IP.include?(ipaddr)
+      end
+    rescue IPAddr::InvalidAddressError
+      true
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="document documents extract html metadata nokogiri opengraph parse parser" data-name="opengraph document parser">
+  <h3>OpenGraph Document Parser</h3>
+  <p>Parse HTML documents to extract OpenGraph metadata using Nokogiri.</p>
+  <div class="docs">Rails Docs: <a href="https://nokogiri.org/" target="_blank">Nokogiri Documentation</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/opengraph/document.rb" target="_blank">app/models/opengraph/document.rb</a></div>
+  <pre><code>class Opengraph::Document
+  attr_accessor :html
+
+  def initialize(html)
+    @html = Nokogiri::HTML(html)
+  end
+
+  def opengraph_attributes
+    @opengraph_attributes ||= extract_opengraph_attributes
+  end
+
+  private
+    def extract_opengraph_attributes
+      opengraph_tags = html.xpath(&quot;//*/meta[starts-with(@property, \&quot;og:\&quot;) or starts-with(@name, \&quot;og:\&quot;)]&quot;).map do |tag|
+        key = tag.key?(&quot;property&quot;) ? &quot;property&quot; : &quot;name&quot;
+        [ tag[key].gsub(&quot;og:&quot;, &quot;&quot;).to_sym, sanitize_content(tag[&quot;content&quot;]) ] if tag[&quot;content&quot;].present?
+      end
+
+      Hash[opengraph_tags.compact].slice(*Opengraph::Metadata::ATTRIBUTES)
+    end
+
+    def sanitize_content(content)
+      html.meta_encoding ? content : content.encode(&quot;UTF-8&quot;, &quot;binary&quot;, invalid: :replace, undef: :replace, replace: &quot;&quot;)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="attachments automatically deliver delivery handling process response responses text webhook webhooks" data-name="webhook delivery with response handling">
+  <h3>Webhook Delivery with Response Handling</h3>
+  <p>Deliver webhooks and process responses (text or attachments) automatically.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveStorage/Blob.html" target="_blank">ActiveStorage::Blob API</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/webhook.rb" target="_blank">app/models/webhook.rb</a></div>
+  <pre><code>class Webhook &lt; ApplicationRecord
+  ENDPOINT_TIMEOUT = 7.seconds
+
+  def deliver(message)
+    post(payload(message)).tap do |response|
+      if text = extract_text_from(response)
+        receive_text_reply_to(message.room, text: text)
+      elsif attachment = extract_attachment_from(response)
+        receive_attachment_reply_to(message.room, attachment: attachment)
+      end
+    end
+  rescue Net::OpenTimeout, Net::ReadTimeout
+    receive_text_reply_to message.room, text: &quot;Failed to respond within #{ENDPOINT_TIMEOUT} seconds&quot;
+  end
+
+  private
+    def extract_attachment_from(response)
+      if mime_type = Mime::Type.lookup(response.content_type)
+        ActiveStorage::Blob.create_and_upload! \
+          io: StringIO.new(response.body), filename: &quot;attachment.#{mime_type.symbol}&quot;
+      end
+    end
+
+    def without_recipient_mentions(body)
+      body \
+        .gsub(user.attachable_plain_text_representation(nil), &quot;&quot;)
+        .gsub(/\A\p{Space}+|\p{Space}+\z/, &quot;&quot;)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="concurrent delivery high notification notifications pool pools push ruby thread throughput" data-name="concurrent thread pool for push notifications">
+  <h3>Concurrent Thread Pool for Push Notifications</h3>
+  <p>Use concurrent-ruby thread pools for high-throughput push notification delivery.</p>
+  <div class="docs">Rails Docs: <a href="https://github.com/ruby-concurrency/concurrent-ruby" target="_blank">concurrent-ruby</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/lib/web_push/pool.rb" target="_blank">lib/web_push/pool.rb</a></div>
+  <pre><code>class WebPush::Pool
+  def initialize(invalid_subscription_handler:)
+    @delivery_pool = Concurrent::ThreadPoolExecutor.new(max_threads: 50, queue_size: 10000)
+    @invalidation_pool = Concurrent::FixedThreadPool.new(1)
+    @connection = Net::HTTP::Persistent.new(name: &quot;web_push&quot;, pool_size: 150)
+    @invalid_subscription_handler = invalid_subscription_handler
+  end
+
+  def queue(payload, subscriptions)
+    subscriptions.find_each do |subscription|
+      deliver_later(payload, subscription)
+    end
+  end
+
+  private
+    def deliver_later(payload, subscription)
+      notification = subscription.notification(**payload)
+      subscription_id = subscription.id
+
+      delivery_pool.post do
+        deliver(notification, subscription_id)
+      rescue Exception =&gt; e
+        Rails.logger.error &quot;Error in WebPush::Pool.deliver: #{e.class} #{e.message}&quot;
+      end
+    rescue Concurrent::RejectedExecutionError
+    end
+
+    def deliver(notification, id)
+      notification.deliver(connection: connection)
+    rescue WebPush::ExpiredSubscription, OpenSSL::OpenSSLError =&gt; ex
+      invalidate_subscription_later(id) if invalid_subscription_handler
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="business classes complex encapsulate logic objects plain ruby service" data-name="service objects (plain ruby classes)">
+  <h3>Service Objects (Plain Ruby Classes)</h3>
+  <p>Encapsulate complex business logic in plain Ruby service objects.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/active_record_querying.html" target="_blank">Active Record Query Interface</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/room/message_pusher.rb" target="_blank">app/models/room/message_pusher.rb</a></div>
+  <pre><code>class Room::MessagePusher
+  attr_reader :room, :message
+
+  def initialize(room:, message:)
+    @room, @message = room, message
+  end
+
+  def push
+    build_payload.tap do |payload|
+      push_to_users_involved_in_everything(payload)
+      push_to_users_involved_in_mentions(payload)
+    end
+  end
+
+  private
+    def build_payload
+      room.direct? ? build_direct_payload : build_shared_payload
+    end
+
+    def push_subscriptions_for_users_involved_in_everything
+      relevant_subscriptions.merge(Membership.involved_in_everything)
+    end
+
+    def relevant_subscriptions
+      Push::Subscription
+        .joins(user: :memberships)
+        .merge(Membership.visible.disconnected.where(room: room).where.not(user: message.creator))
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="active async background job jobs keeping objects service thin work" data-name="background jobs">
+  <h3>Background Jobs</h3>
+  <p>Use Active Job for async work, keeping jobs thin with service objects.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/active_job_basics.html" target="_blank">Active Job Basics</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/jobs/room/push_message_job.rb" target="_blank">app/jobs/room/push_message_job.rb</a></div>
+  <pre><code>class Room::PushMessageJob &lt; ApplicationJob
+  def perform(room, message)
+    Room::MessagePusher.new(room:, message:).push
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="cleanup configure custom handlers infrastructure initialization initializers pool push web" data-name="web push pool initialization">
+  <h3>Web Push Pool Initialization</h3>
+  <p>Configure custom infrastructure in initializers with cleanup handlers.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/configuring.html#using-initializer-files" target="_blank">Rails Initializers Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/config/initializers/web_push.rb" target="_blank">config/initializers/web_push.rb</a></div>
+  <pre><code>Rails.application.configure do
+  config.x.web_push_pool = WebPush::Pool.new(
+    invalid_subscription_handler: -&gt;(subscription_id) do
+      Rails.application.executor.wrap do
+        Rails.logger.info &quot;Destroying push subscription: #{subscription_id}&quot;
+        Push::Subscription.find_by(id: subscription_id)&amp;.destroy
+      end
+    end
+  )
+
+  at_exit { config.x.web_push_pool.shutdown }
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="library methods module override party patches prepending third" data-name="module prepending for library patches">
+  <h3>Module Prepending for Library Patches</h3>
+  <p>Override third-party library methods using module prepending.</p>
+  <div class="docs">Rails Docs: <a href="https://ruby-doc.org/core-3.1.0/Module.html#method-i-prepend" target="_blank">Ruby Module#prepend</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/config/initializers/web_push.rb" target="_blank">config/initializers/web_push.rb</a></div>
+  <pre><code>module WebPush::PersistentRequest
+  def perform
+    if @options[:connection]
+      http = @options[:connection]
+    else
+      http = Net::HTTP.new(uri.host, uri.port, *proxy_options)
+      http.use_ssl = true
+    end
+
+    req = Net::HTTP::Post.new(uri.request_uri, headers)
+    req.body = body
+
+    if http.is_a?(Net::HTTP::Persistent)
+      response = http.request uri, req
+    else
+      resp = http.request(req)
+      verify_response(resp)
+    end
+
+    resp
+  end
+end
+
+WebPush::Request.prepend WebPush::PersistentRequest
+
+# Adds persistent HTTP connection support to web-push gem
+# Better than monkey patching - preserves original behavior</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="all auto automatically directory extensions initializer lib loading require ruby" data-name="auto-loading extensions initializer">
+  <h3>Auto-Loading Extensions Initializer</h3>
+  <p>Automatically require all Ruby extensions from lib directory.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/autoloading_and_reloading_constants.html" target="_blank">Rails Autoloading Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/config/initializers/extensions.rb" target="_blank">config/initializers/extensions.rb</a></div>
+  <pre><code>%w[ rails_ext ].each do |extensions_dir|
+  Dir[&quot;#{Rails.root}/lib/#{extensions_dir}/*&quot;].each { |path|
+    require &quot;#{extensions_dir}/#{File.basename(path)}&quot;
+  }
+end
+
+# Loads all files in lib/rails_ext/ automatically
+# Good pattern for organizing String, Array, Hash extensions</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="actioncable aware deployments handle helper name prefix script subdirectory url urls" data-name="script-aware actioncable url helper">
+  <h3>Script-Aware ActionCable URL Helper</h3>
+  <p>Handle ActionCable URLs with script name prefix for subdirectory deployments.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActionView/Helpers/TagHelper.html" target="_blank">ActionView TagHelper API</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/helpers/cable_helper.rb" target="_blank">app/helpers/cable_helper.rb</a></div>
+  <pre><code>module CableHelper
+  def script_aware_action_cable_meta_tag
+    tag.meta \
+      name: &quot;action-cable-url&quot;,
+      content: Pathname(request.script_name) + Pathname(ActionCable.server.config.mount_path)
+  end
+end
+
+# Supports deployments where app is mounted at a subdirectory
+# e.g., example.com/campfire/ instead of example.com/</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="auto core directory extensions lib loading organize ruby" data-name="core extensions in lib/">
+  <h3>Core Extensions in lib/</h3>
+  <p>Organize Ruby extensions in lib directory with auto-loading.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveSupport/CoreExtensions.html" target="_blank">ActiveSupport Core Extensions</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/lib/rails_ext/string.rb" target="_blank">lib/rails_ext/string.rb</a></div>
+  <pre><code>class String
+  def all_emoji?
+    self.match? /\A(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\uFE0F)+\z/u
+  end
+end
+
+# Usage: &quot;😄🤘&quot;.all_emoji? # =&gt; true
+# Usage: &quot;Haha! 😄&quot;.all_emoji?  # =&gt; false</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="app config configuration environment git rails revision store version" data-name="version configuration from environment">
+  <h3>Version Configuration from Environment</h3>
+  <p>Store app version and git revision in Rails config from environment.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/configuring.html#custom-configuration" target="_blank">Rails Custom Configuration</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/config/initializers/version.rb" target="_blank">config/initializers/version.rb</a></div>
+  <pre><code>Rails.application.config.app_version = ENV.fetch(&quot;APP_VERSION&quot;, &quot;0&quot;)
+Rails.application.config.git_revision = ENV[&quot;GIT_REVISION&quot;]</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="cleanup consistency group operations related transaction transactional" data-name="transactional cleanup">
+  <h3>Transactional Cleanup</h3>
+  <p>Group related cleanup operations in a transaction for consistency.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActiveRecord/Transactions/ClassMethods.html" target="_blank">ActiveRecord Transactions API</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/models/user.rb" target="_blank">app/models/user.rb</a></div>
+  <pre><code>def deactivate
+  transaction do
+    close_remote_connections
+
+    memberships.without_direct_rooms.delete_all
+    push_subscriptions.delete_all
+    searches.delete_all
+    sessions.delete_all
+
+    update! active: false, email_address: deactived_email_address
+  end
+end
+
+private
+  def deactived_email_address
+    email_address&amp;.gsub(/@/, &quot;-deactivated-#{SecureRandom.uuid}@&quot;)
+  end
+
+  def close_remote_connections(reconnect: false)
+    ActionCable.server.remote_connections.where(current_user: self).disconnect reconnect: reconnect
+  end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="fixtures helper helpers organization organize parallel test testing" data-name="test helper organization">
+  <h3>Test Helper Organization</h3>
+  <p>Organize test helpers with parallel testing and fixtures.</p>
+  <div class="docs">Rails Docs: <a href="https://guides.rubyonrails.org/testing.html" target="_blank">Rails Testing Guide</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/test/test_helper.rb" target="_blank">test/test_helper.rb</a></div>
+  <pre><code>class ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
+  parallelize(workers: :number_of_processors)
+
+  fixtures :all
+
+  include SessionTestHelper, MentionTestHelper, TurboTestHelper
+
+  setup do
+    ActionCable.server.pubsub.clear
+
+    Rails.configuration.tap do |config|
+      config.x.web_push_pool.shutdown
+      config.x.web_push_pool = WebPush::Pool.new \
+        invalid_subscription_handler: config.x.web_push_pool.invalid_subscription_handler
+    end
+
+    WebMock.disable_net_connect!
+  end
+
+  teardown do
+    WebMock.reset!
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="clean custom direct helpers parameterized rails routes url urls" data-name="direct routes for custom urls">
+  <h3>Direct Routes for Custom URLs</h3>
+  <p>Use Rails direct routes for clean, parameterized URL helpers.</p>
+  <div class="docs">Rails Docs: <a href="https://api.rubyonrails.org/classes/ActionDispatch/Routing/Mapper/CustomUrls.html" target="_blank">Rails Direct Routes API</a></div>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/config/routes.rb" target="_blank">config/routes.rb</a></div>
+  <pre><code>direct :fresh_account_logo do |options|
+  route_for :account_logo, v: Current.account&amp;.updated_at&amp;.to_fs(:number), size: options[:size]
+end
+
+direct :fresh_user_avatar do |user, options|
+  route_for :user_avatar, user.avatar_token, v: user.updated_at.to_fs(:number)
+end
+
+# Custom URL pattern for messages
+get &quot;@:message_id&quot;, to: &quot;rooms#show&quot;, as: :at_message
+
+# Nested scoped defaults
+scope defaults: { user_id: &quot;me&quot; } do
+  resource :sidebar, only: :show
+  resource :profile
+  resources :push_subscriptions
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="hotwire html layout modern prefetch pwa rails setup support transitions turbo view" data-name="html layout with hotwire setup">
+  <h3>HTML Layout with Hotwire Setup</h3>
+  <p>Modern Rails layout with Turbo prefetch, view transitions, and PWA support.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/once-campfire/blob/main/app/views/layouts/application.html.erb" target="_blank">app/views/layouts/application.html.erb</a></div>
+  <pre><code>&lt;head&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content&quot;&gt;
+  &lt;meta name=&quot;view-transition&quot; content=&quot;same-origin&quot;&gt;
+  &lt;meta name=&quot;color-scheme&quot; content=&quot;light dark&quot;&gt;
+  &lt;meta name=&quot;apple-mobile-web-app-capable&quot; content=&quot;yes&quot;&gt;
+  &lt;%= csrf_meta_tags %&gt;
+  &lt;%= csp_meta_tag %&gt;
+
+  &lt;%= tag.meta name: &quot;vapid-public-key&quot;, content: Rails.configuration.x.vapid.public_key %&gt;
+  &lt;%= tag.meta name: &quot;turbo-prefetch&quot;, content: &quot;true&quot; %&gt;
+
+  &lt;%= tag.link rel: &quot;manifest&quot;, href: webmanifest_path(format: :json) %&gt;
+  &lt;%= stylesheet_link_tag :all, &quot;data-turbo-track&quot;: &quot;reload&quot; %&gt;
+  &lt;%= javascript_importmap_tags %&gt;
+&lt;/head&gt;
+
+&lt;body class=&quot;&lt;%= body_classes %&gt;&quot; data-controller=&quot;local-time lightbox&quot;&gt;
+  &lt;a href=&quot;#main-content&quot; class=&quot;skip-navigation btn&quot;&gt;Skip to main content&lt;/a&gt;
+  &lt;% if notice = flash[:notice] || flash[:alert] %&gt;
+    &lt;div class=&quot;flash&quot; data-controller=&quot;element-removal&quot; data-action=&quot;animationend-&gt;element-removal#remove&quot;&gt;
+      &lt;span role=&quot;alert&quot; aria-atomic=&quot;true&quot;&gt;&lt;%= notice %&gt;&lt;/span&gt;
+    &lt;/div&gt;
+  &lt;% end %&gt;
+&lt;/body&gt;</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+
+  <div class="generated">
+    Generated: 2025-11-19 14:33:48 UTC | <a href="https://github.com/swistaczek/ruby-snippets">Ruby & Rails Patterns Collection</a>
+  </div>
+
+  <script src="search.js"></script>
+</body>
+</html>
