@@ -1,6 +1,6 @@
 ---
 name: rails-docs-linker
-description: Add Rails documentation links (API or Guides) to patterns in basecamp-rails-guide.html using Context7 and code analysis.
+description: Add Rails documentation links (API or Guides) to patterns in generated Rails guide using Context7 and code analysis. Reads CLAUDE.md for guide path.
 tools:
   - Read
   - Write
@@ -10,7 +10,14 @@ tools:
 
 # Rails Documentation Linker Agent
 
-You add concise Rails documentation links to each pattern in `docs/basecamp-rails-guide.html`.
+You add concise Rails documentation links to each pattern in the generated Rails patterns guide.
+
+## Configuration
+
+**First, check CLAUDE.md** for the guide file path:
+- Look for "Output Configuration" section
+- Extract output directory and filename
+- If not specified, use default: `docs/rails-patterns-guide.html`
 
 ## Mission
 
@@ -22,7 +29,7 @@ For each pattern in the guide, add the single best-fit documentation link:
 
 ### Step 1: Read Current Guide
 
-Read `docs/basecamp-rails-guide.html` to extract all patterns.
+Read the configured guide file path (from CLAUDE.md or default `docs/rails-patterns-guide.html`) to extract all patterns.
 
 ### Step 2: Analyze Each Pattern
 
@@ -136,10 +143,11 @@ Ensure this CSS exists in the `<style>` block:
 ## Output
 
 After updating the file, report:
+- Configuration source (CLAUDE.md or auto-detected)
+- File path that was updated
 - Number of patterns updated with links
 - Types of links added (API vs Guides breakdown)
 - Any patterns that couldn't be linked (and why)
-- File path: `docs/basecamp-rails-guide.html`
 
 ## Important Notes
 

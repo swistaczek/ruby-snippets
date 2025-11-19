@@ -51,13 +51,109 @@ This repository is optimized for Context7 indexing:
 - Source attribution and external documentation links
 - Unified `context7.json` configuration at root
 
-## Adding New Projects
+## Claude Code Pattern Extraction Agents
 
-To add a new project to this collection:
+This repository includes **general-purpose Claude Code agents** that can analyze **any Rails codebase** and automatically generate comprehensive pattern documentation.
 
-1. Create a new directory with the project name (e.g., `my-rails-app/`)
-2. Add a `README.md` with project context and overview
-3. Create documentation files in Markdown format following the existing pattern structure:
+### Quick Start
+
+The agents work with **smart defaults** out-of-the-box for standard Rails projects:
+
+```bash
+# In any Rails project directory
+@rails-guide-writer
+```
+
+This will:
+1. Auto-detect your project structure, tech stack, and patterns
+2. Generate a comprehensive HTML guide with code examples
+3. Output to `docs/rails-patterns-guide.html`
+
+### Customizing for Your Project
+
+For non-standard projects or custom output, create a `CLAUDE.md` file:
+
+```markdown
+## Your Rails Project Configuration
+
+**Project Name:** My E-commerce App
+**Description:** Multi-tenant SaaS platform built with Rails 7
+**Source Repository:** https://github.com/yourorg/yourapp
+
+### Directory Structure
+- Models: `app/models/`
+- Controllers: `app/controllers/`
+- JavaScript: `app/javascript/controllers/`
+
+### Technology Stack
+- **Frontend:** Hotwire (Turbo + Stimulus)
+- **Background Jobs:** Sidekiq
+- **Database:** PostgreSQL
+
+### Output Configuration
+- **Output Directory:** `docs/`
+- **Output Filename:** `my-app-patterns.html`
+- **Documentation Title:** `My App - Rails Patterns`
+```
+
+See [CLAUDE.md](./CLAUDE.md) for complete configuration options and agent documentation.
+
+### Available Agents
+
+- **@rails-guide-writer** - Main coordinator that generates complete pattern guide
+- **@rails-models** - Analyze model patterns (concerns, associations, STI, callbacks)
+- **@rails-controllers** - Analyze controller patterns (auth, lean controllers, Turbo)
+- **@rails-frontend** - Analyze frontend patterns (Hotwire, React, ViewComponent)
+- **@rails-infrastructure** - Analyze infrastructure (jobs, database, caching, deployment)
+- **@rails-docs-linker** - Add Rails documentation links to generated guide
+
+### Using Agents in Your Rails Project
+
+**Option 1: Copy agents to your project**
+```bash
+# Copy the .claude directory
+cp -r .claude /path/to/your/rails/project/
+
+# Create CLAUDE.md with your project details
+# Run the coordinator
+cd /path/to/your/rails/project
+@rails-guide-writer
+```
+
+**Option 2: Use directly (if analyzing from this repo)**
+```bash
+# Agents will auto-detect project from current directory
+cd /path/to/any/rails/project
+@rails-guide-writer
+```
+
+### Features
+
+- ✅ **Auto-detection** - Infers project name, tech stack, and structure from codebase
+- ✅ **Smart defaults** - Works without configuration for standard Rails projects
+- ✅ **Configurable** - Override via CLAUDE.md for custom setups
+- ✅ **Real code examples** - Extracts actual production patterns, not synthetic examples
+- ✅ **Documentation links** - Adds official Rails documentation references
+- ✅ **Self-contained HTML** - Generated guides work offline with embedded CSS
+
+### Output Example
+
+The generated guide includes:
+- 30-40 production-ready patterns across 4 categories
+- Code snippets (max 20 lines each) with file paths
+- Links to source files in your repository
+- Links to relevant Rails documentation
+- Mobile-responsive HTML with clean typography
+- Generation timestamp for freshness tracking
+
+## Adding New Projects to This Repository
+
+To add patterns from a new Rails project to this collection:
+
+1. Run the pattern extraction agents against the project
+2. Create a new directory with the project name (e.g., `my-rails-app/`)
+3. Add a `README.md` with project context and overview
+4. Convert generated HTML to Markdown following the existing pattern structure:
    ```markdown
    ## Category Name
 
@@ -71,8 +167,8 @@ To add a new project to this collection:
    # code example
    ```
    ```
-4. Update this root README to list the new project
-5. Commit and push to trigger Context7 re-indexing
+5. Update this root README to list the new project
+6. Commit and push to trigger Context7 re-indexing
 
 ## Structure
 
