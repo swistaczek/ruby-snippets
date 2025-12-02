@@ -176,13 +176,35 @@
       searchBox.focus();
     }
 
-    // Escape to clear search
-    if (event.key === 'Escape' && document.activeElement === searchBox) {
-      searchBox.value = '';
-      currentSearchTerm = '';
-      filterPatterns();
+    // Escape to close modal or clear search
+    if (event.key === 'Escape') {
+      const modal = document.getElementById('modalBackdrop');
+      if (modal && modal.classList.contains('open')) {
+        closeModal();
+      } else if (document.activeElement === searchBox) {
+        searchBox.value = '';
+        currentSearchTerm = '';
+        filterPatterns();
+      }
     }
   }
+
+  /**
+   * Open help modal
+   */
+  window.openModal = function() {
+    const modal = document.getElementById('modalBackdrop');
+    if (modal) modal.classList.add('open');
+  };
+
+  /**
+   * Close help modal
+   */
+  window.closeModal = function(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const modal = document.getElementById('modalBackdrop');
+    if (modal) modal.classList.remove('open');
+  };
 
   /**
    * Initialize

@@ -257,6 +257,105 @@
       color: #0e7490;
     }
 
+    /* Help modal */
+    .help-btn {
+      padding: 0.35rem 0.75rem;
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 0.7rem;
+      border: 1px solid #0066cc;
+      background: #fff;
+      color: #0066cc;
+      cursor: pointer;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .help-btn:hover {
+      background: #0066cc;
+      color: #fff;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal {
+      background: #fff;
+      border: 2px solid #333;
+      max-width: 500px;
+      width: 90%;
+      font-size: 0.85rem;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #ddd;
+      background: #f4f4f4;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #666;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 1rem;
+    }
+
+    .modal-body ol {
+      margin: 0;
+      padding-left: 1.5rem;
+    }
+
+    .modal-body li {
+      margin-bottom: 1rem;
+    }
+
+    .modal-body li:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-body strong {
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .modal-body pre {
+      margin: 0;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+    }
+
     /* Mobile responsive */
     @media (max-width: 600px) {
       body {
@@ -276,7 +375,7 @@
 </head>
 <body>
   <h1>Ruby & Rails Patterns Collection</h1>
-  <p>Production-ready patterns from Basecamp Campfire and 37signals Fizzy</p>
+  <p>Production-ready patterns from Basecamp Campfire and 37signals Fizzy <button class="help-btn" onclick="openModal()">How to Use / MCP</button></p>
 
   <!-- Search and Filter UI -->
   <div class="search-container">
@@ -3571,6 +3670,32 @@ end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
 
   <div class="generated">
     Generated: 2025-12-02 23:36:27 UTC | <a href="https://github.com/swistaczek/ruby-snippets">Ruby & Rails Patterns Collection</a>
+  </div>
+
+  <!-- Help Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Use with Claude Code</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <ol>
+          <li>
+            <strong>Enable Context7 MCP</strong>
+            <pre><code>claude mcp add context7 -- npx -y @anthropic/context7-mcp</code></pre>
+          </li>
+          <li>
+            <strong>Add to your CLAUDE.md</strong>
+            <pre><code>Context7: /swistaczek/ruby-snippets</code></pre>
+          </li>
+          <li>
+            <strong>Ask Claude</strong>
+            <pre><code>"Show Rails auth patterns from /swistaczek/ruby-snippets"</code></pre>
+          </li>
+        </ol>
+      </div>
+    </div>
   </div>
 
   <script src="search.js"></script>
