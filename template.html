@@ -191,6 +191,72 @@
       display: none;
     }
 
+    /* Source badges */
+    .source-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+      font-weight: normal;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .source-badge.campfire {
+      background: #f59e0b;
+      color: #78350f;
+    }
+
+    .source-badge.fizzy {
+      background: #06b6d4;
+      color: #164e63;
+    }
+
+    /* Source filter buttons */
+    .source-filters {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .source-btn {
+      padding: 0.35rem 0.75rem;
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 0.7rem;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .source-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .source-btn.active {
+      border-color: #333;
+      color: #333;
+      font-weight: bold;
+    }
+
+    .source-btn.campfire.active {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+
+    .source-btn.fizzy.active {
+      background: #cffafe;
+      border-color: #06b6d4;
+      color: #0e7490;
+    }
+
     /* Mobile responsive */
     @media (max-width: 600px) {
       body {
@@ -226,6 +292,12 @@
       <button class="filter-btn" data-category="controllers">Controllers</button>
       <button class="filter-btn" data-category="frontend">Frontend</button>
       <button class="filter-btn" data-category="infrastructure">Infrastructure</button>
+    </div>
+    <div class="source-filters" id="sourceFilters">
+      <span style="font-size: 0.7rem; color: #888; margin-right: 0.25rem;">Source:</span>
+      <button class="source-btn active" data-source="all">All</button>
+      <button class="source-btn campfire" data-source="campfire">Campfire</button>
+      <button class="source-btn fizzy" data-source="fizzy">Fizzy</button>
     </div>
     <div class="results-count" id="resultsCount"></div>
   </div>

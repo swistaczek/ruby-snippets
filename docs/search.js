@@ -7,16 +7,18 @@
 
   // State
   let currentCategory = 'all';
+  let currentSource = 'all';
   let currentSearchTerm = '';
 
   // DOM elements
   const searchBox = document.getElementById('searchBox');
   const categoryFilters = document.getElementById('categoryFilters');
+  const sourceFilters = document.getElementById('sourceFilters');
   const resultsCount = document.getElementById('resultsCount');
   const patterns = document.querySelectorAll('.pattern');
 
   /**
-   * Filter patterns based on search term and category
+   * Filter patterns based on search term, category, and source
    */
   function filterPatterns() {
     let visibleCount = 0;
@@ -24,12 +26,16 @@
 
     patterns.forEach(pattern => {
       const category = pattern.getAttribute('data-category');
+      const source = pattern.getAttribute('data-source');
       const name = pattern.getAttribute('data-name') || '';
       const keywords = pattern.getAttribute('data-keywords') || '';
       const description = pattern.querySelector('p')?.textContent.toLowerCase() || '';
 
       // Check category filter
       const categoryMatch = currentCategory === 'all' || category === currentCategory;
+
+      // Check source filter
+      const sourceMatch = currentSource === 'all' || source === currentSource;
 
       // Check search term (matches name, description, or keywords)
       const searchMatch = !searchLower ||
@@ -38,7 +44,7 @@
         keywords.includes(searchLower);
 
       // Show/hide pattern
-      if (categoryMatch && searchMatch) {
+      if (categoryMatch && sourceMatch && searchMatch) {
         pattern.setAttribute('data-hidden', 'false');
         visibleCount++;
       } else {
@@ -55,7 +61,7 @@
    */
   function updateResultsCount(count) {
     const total = patterns.length;
-    if (currentSearchTerm || currentCategory !== 'all') {
+    if (currentSearchTerm || currentCategory !== 'all' || currentSource !== 'all') {
       resultsCount.textContent = `${count} of ${total} patterns`;
     } else {
       resultsCount.textContent = `${total} patterns`;
@@ -84,6 +90,23 @@
 
     // Update current category
     currentCategory = event.target.getAttribute('data-category');
+    filterPatterns();
+  }
+
+  /**
+   * Handle source filter click
+   */
+  function handleSourceClick(event) {
+    if (!event.target.classList.contains('source-btn')) return;
+
+    // Update active button
+    document.querySelectorAll('.source-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Update current source
+    currentSource = event.target.getAttribute('data-source');
     filterPatterns();
   }
 
@@ -172,6 +195,10 @@
 
     if (categoryFilters) {
       categoryFilters.addEventListener('click', handleCategoryClick);
+    }
+
+    if (sourceFilters) {
+      sourceFilters.addEventListener('click', handleSourceClick);
     }
 
     document.addEventListener('keydown', handleKeyboard);

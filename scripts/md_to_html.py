@@ -53,7 +53,7 @@ def extract_keywords(description, pattern_name):
     # Deduplicate and return
     return ' '.join(sorted(set(keywords)))
 
-def parse_patterns(content):
+def parse_patterns(content, source_project='unknown'):
     """Parse markdown content and extract patterns organized by section."""
     sections = {}
     current_section = None
@@ -82,7 +82,8 @@ def parse_patterns(content):
                 'rails_docs': '',
                 'source': '',
                 'code': '',
-                'category': categorize_pattern(current_section)
+                'category': categorize_pattern(current_section),
+                'source_project': source_project
             }
             sections[current_section].append(current_pattern)
             i += 1
@@ -166,10 +167,11 @@ def generate_html(sections, frontmatter, template_path, output_path):
 
             # Extract keywords for search
             keywords = extract_keywords(pattern['description'], pattern['name'])
+            source_project = pattern.get('source_project', 'unknown')
 
             # Pattern div with data attributes
-            pattern_html = f'''<div class="pattern" data-category="{pattern['category']}" data-keywords="{keywords}" data-name="{pattern['name'].lower()}">
-  <h3>{pattern['name']}</h3>
+            pattern_html = f'''<div class="pattern" data-category="{pattern['category']}" data-source="{source_project}" data-keywords="{keywords}" data-name="{pattern['name'].lower()}">
+  <h3>{pattern['name']}<span class="source-badge {source_project}">{source_project}</span></h3>
   <p>{pattern['description']}</p>'''
 
             # Add Rails docs link if available
@@ -233,14 +235,20 @@ def main():
             print(f"⚠ Skipping {md_path} (not found)")
             continue
 
-        print(f"Processing {md_path.parent.name}/{md_path.name}...")
+        # Determine source project name from directory
+        source_project = md_path.parent.name
+        # Normalize: once-campfire -> campfire
+        if source_project == 'once-campfire':
+            source_project = 'campfire'
+
+        print(f"Processing {md_path.parent.name}/{md_path.name} (source: {source_project})...")
 
         # Parse markdown
         frontmatter, content = parse_markdown_file(md_path)
         print(f"  ✓ Parsed: {frontmatter.get('title', md_path.parent.name)}")
 
-        # Extract patterns
-        sections = parse_patterns(content)
+        # Extract patterns with source tracking
+        sections = parse_patterns(content, source_project=source_project)
         section_count = sum(len(patterns) for patterns in sections.values())
         print(f"  ✓ Extracted {section_count} patterns")
         total_parsed += section_count
