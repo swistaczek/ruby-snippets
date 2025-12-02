@@ -1,36 +1,4 @@
 {
-  "$schema": "https://context7.com/schema/context7.json",
-  "projectTitle": "Ruby & Rails Patterns Collection",
-  "description": "Real-world Ruby and Rails patterns extracted from production codebases. Battle-tested code examples, modern best practices, and pragmatic architectural decisions.",
-  "folders": [
-    "once-campfire"
-  ],
-  "excludeFolders": [
-    "node_modules",
-    "tmp",
-    "log",
-    "test",
-    "vendor",
-    "public",
-    ".git"
-  ],
-  "excludeFiles": [
-    "convert_html_to_md.py",
-    "*.pyc",
-    ".DS_Store"
-  ],
-  "rules": [
-    "Use modern Rails 7+ patterns with Hotwire (Turbo + Stimulus)",
-    "Follow Rails conventions and built-in features over external dependencies",
-    "Prefer ActiveSupport::CurrentAttributes for request-scoped data",
-    "Use concerns for model and controller organization",
-    "Implement real-time features with ActionCable and Turbo Streams",
-    "Use direct routes for clean, RESTful URL helpers",
-    "Keep controllers lean by moving logic to models and service objects",
-    "Prefer SQLite for simple deployments with proper indexing",
-    "Use ActionText for rich text content and @mentions",
-    "Implement cursor-based pagination for better performance",
-    "Use signed IDs for tamper-proof URL tokens",
-    "Follow Single Table Inheritance patterns for type hierarchies"
-  ]
+  "url": "https://context7.com/swistaczek/ruby-snippets",
+  "public_key": "pk_YBRJfZgy4LGkCkCulesac"
 }
