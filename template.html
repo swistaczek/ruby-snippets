@@ -354,6 +354,23 @@
       margin: 0;
       padding: 0.5rem;
       font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .modal-body pre:hover {
+      background: #e8e8e8;
+      border-color: #0066cc;
+    }
+
+    .modal-body pre.copied {
+      background: #0066cc;
+      border-color: #0066cc;
+    }
+
+    .modal-body pre.copied code {
+      color: #fff;
+      background: transparent;
     }
 
     /* Mobile responsive */
@@ -419,15 +436,15 @@
         <ol>
           <li>
             <strong>Enable Context7 MCP</strong>
-            <pre><code>claude mcp add context7 -- npx -y @anthropic/context7-mcp</code></pre>
+            <pre onclick="copyModalCode(this)"><code>claude mcp add context7 -- npx -y @anthropic/context7-mcp</code></pre>
           </li>
           <li>
             <strong>Add to your CLAUDE.md</strong>
-            <pre><code>Context7: /swistaczek/ruby-snippets</code></pre>
+            <pre onclick="copyModalCode(this)"><code>Context7: /swistaczek/ruby-snippets</code></pre>
           </li>
           <li>
             <strong>Ask Claude</strong>
-            <pre><code>"Show Rails auth patterns from /swistaczek/ruby-snippets"</code></pre>
+            <pre onclick="copyModalCode(this)"><code>"Show Rails auth patterns from /swistaczek/ruby-snippets"</code></pre>
           </li>
         </ol>
       </div>

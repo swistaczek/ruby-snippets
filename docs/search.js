@@ -207,6 +207,31 @@
   };
 
   /**
+   * Copy modal code block to clipboard
+   */
+  window.copyModalCode = function(pre) {
+    const code = pre.querySelector('code');
+    const text = code.textContent;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showModalCopyFeedback(pre);
+      });
+    } else {
+      fallbackCopy(text, { parentElement: pre });
+      showModalCopyFeedback(pre);
+    }
+  };
+
+  /**
+   * Show feedback on modal pre element
+   */
+  function showModalCopyFeedback(pre) {
+    pre.classList.add('copied');
+    setTimeout(() => pre.classList.remove('copied'), 800);
+  }
+
+  /**
    * Initialize
    */
   function init() {
