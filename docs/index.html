@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Basecamp Rails Patterns - Campfire</title>
+  <title>Ruby & Rails Patterns Collection</title>
   <style>
     * { box-sizing: border-box; }
 
@@ -209,8 +209,8 @@
   </style>
 </head>
 <body>
-  <h1>Basecamp Rails Patterns - Campfire</h1>
-  <p>Real-world Ruby on Rails patterns from Basecamp's open-source Campfire chat application</p>
+  <h1>Ruby & Rails Patterns Collection</h1>
+  <p>Production-ready patterns from Basecamp Campfire and 37signals Fizzy</p>
 
   <!-- Search and Filter UI -->
   <div class="search-container">
@@ -231,7 +231,7 @@
   </div>
 
   <!-- Content will be inserted here -->
-  <h2 id="models">Models (26 patterns)</h2>
+  <h2 id="models">Models (36 patterns)</h2>
 <div class="pattern" data-category="models" data-keywords="activesupport attributes current currentattributes data global request safe scoped state thread" data-name="current attributes">
   <h3>Current Attributes</h3>
   <p>Thread-safe global state using ActiveSupport::CurrentAttributes for request-scoped data.</p>
@@ -865,7 +865,270 @@ end
 # Usage: Push::Subscription uses push_subscriptions table</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
 </div>
 
-<h2 id="controllers">Controllers (16 patterns)</h2>
+<div class="pattern" data-category="models" data-keywords="account activesupport all applications between context crucial current currentattributes data database ensures isolation method multi passing pattern queries requests reset safety scope scoping session signatures tenancy tenant this thread through without" data-name="currentattributes with multi-tenancy & session scoping">
+  <h3>CurrentAttributes with Multi-tenancy & Session Scoping</h3>
+  <p>Uses ActiveSupport::CurrentAttributes to scope all database queries to the current account and session. This pattern ensures data isolation in multi-tenant applications without passing context through method signatures. The reset method is crucial for thread safety between requests.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/current.rb" target="_blank">app/models/current.rb</a></div>
+  <pre><code>class Current &lt; ActiveSupport::CurrentAttributes
+  attribute :account, :session, :user
+
+  def account=(account)
+    super
+    self.session = nil
+  end
+
+  def session=(session)
+    super
+    self.user = session&amp;.user
+  end
+
+  resets { Time.zone = nil }
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="auto avoiding collisions concern creation distributed generates globally ideal identifiable identifiers increment keys making ordered primary provides securerandom sortable systems that them this time timestamp unique uuid uuid_v7 uuids" data-name="globally identifiable with uuid primary keys">
+  <h3>Globally Identifiable with UUID Primary Keys</h3>
+  <p>Concern that generates UUIDs for primary keys using SecureRandom.uuid_v7 (timestamp-ordered UUIDs). This provides globally unique identifiers that are sortable by creation time, making them ideal for distributed systems and avoiding auto-increment collisions.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/concerns/globally_identifiable.rb" target="_blank">app/models/concerns/globally_identifiable.rb</a></div>
+  <pre><code>module GloballyIdentifiable
+  extend ActiveSupport::Concern
+
+  included do
+    before_create { self.id = generate_unique_id }
+  end
+
+  private
+    def generate_unique_id
+      SecureRandom.uuid_v7
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="account all architecture automatic automatically concern current data default default_scope ensuring filtering fizzy foundation isolation models multi presence queries scope scoped scopes tenancy tenant that this validates" data-name="account-scoped models with default scope">
+  <h3>Account-Scoped Models with Default Scope</h3>
+  <p>Concern that automatically scopes all queries to Current.account, ensuring multi-tenant data isolation. Uses default_scope for automatic filtering and validates account presence. This is the foundation of Fizzy's multi-tenancy architecture.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/concerns/account_scoped.rb" target="_blank">app/models/concerns/account_scoped.rb</a></div>
+  <pre><code>module AccountScoped
+  extend ActiveSupport::Concern
+
+  included do
+    belongs_to :account
+
+    validates :account, presence: true
+
+    default_scope { where(account: Current.account) }
+  end
+
+  class_methods do
+    def with_account(account, &amp;block)
+      unscoped { where(account: account).scoping(&amp;block) }
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="actions activity actor all audit behavior card critical delegated etc event events feeds json maintaining metadata movements pattern polymorphic records significant single sourcing specific system table that tracking trails type types updates while" data-name="event sourcing for activity tracking">
+  <h3>Event Sourcing for Activity Tracking</h3>
+  <p>Polymorphic event system that records all significant actions (card movements, updates, etc.) with actor tracking and JSON metadata. Uses delegated types pattern for type-specific behavior while maintaining a single events table. Critical for audit trails and activity feeds.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/event.rb" target="_blank">app/models/event.rb</a></div>
+  <pre><code>class Event &lt; ApplicationRecord
+  belongs_to :account
+  belongs_to :actor, class_name: &quot;User&quot;
+  belongs_to :subject, polymorphic: true
+  belongs_to :context, polymorphic: true, optional: true
+
+  delegated_type :eventable, types: %w[
+    CardCreated CardUpdated CardMoved CardArchived
+    CardRestored CommentCreated
+  ], dependent: :destroy
+
+  scope :recent, -&gt; { order(created_at: :desc) }
+  scope :for_user, -&gt;(user) { where(actor: user) }
+  scope :for_subject, -&gt;(subject) { where(subject: subject) }
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="accumulate auto automatically based business calculate callbacks cards clear demonstrates domain entropy last logic models movement over pattern postpone postponement reached rules staleness system themselves threshold time track unique when where" data-name="entropy-based auto-postponement system">
+  <h3>Entropy-Based Auto-Postponement System</h3>
+  <p>Unique pattern where cards accumulate 'entropy' over time and automatically postpone themselves when threshold is reached. Uses callbacks to track last movement and calculate staleness. Demonstrates domain logic in models with clear business rules.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/card/entropic.rb" target="_blank">app/models/card/entropic.rb</a></div>
+  <pre><code>module Card::Entropic
+  extend ActiveSupport::Concern
+
+  included do
+    after_update :reset_entropy, if: :saved_change_to_column_id?
+    after_create :initialize_entropy
+  end
+
+  def entropy
+    return 0 unless last_moved_at
+    days_since_movement = (Time.current - last_moved_at).to_i / 1.day
+    [days_since_movement * entropy_rate, max_entropy].min
+  end
+
+  def should_postpone?
+    entropy &gt;= postponement_threshold
+  end
+
+  private
+    def reset_entropy
+      update_column(:last_moved_at, Time.current)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="account cross data each fts fts5 full gets implements improving its leakage own performance preventing search sharded sharding sqlite table text virtual" data-name="sharded full-text search with sqlite">
+  <h3>Sharded Full-Text Search with SQLite</h3>
+  <p>Implements FTS5 full-text search using SQLite with sharding by account. Each account gets its own virtual FTS table, preventing cross-account data leakage and improving performance.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/search/record/sqlite.rb" target="_blank">app/models/search/record/sqlite.rb</a></div>
+  <pre><code>module Search
+  class Record::Sqlite &lt; Record
+    class &lt;&lt; self
+      def search(query, account:)
+        connection.execute(&lt;&lt;~SQL, [account.id, query]).to_a
+          SELECT card_id, rank
+          FROM card_searches_fts
+          WHERE card_searches_fts MATCH ?
+            AND account_id = ?
+          ORDER BY rank
+          LIMIT 50
+        SQL
+      end
+
+      def rebuild_index_for(account)
+        connection.execute(&lt;&lt;~SQL, [account.id])
+          DELETE FROM card_searches_fts WHERE account_id = ?;
+          INSERT INTO card_searches_fts(card_id, account_id, title, description)
+          SELECT id, account_id, title, description FROM cards WHERE account_id = ?;
+        SQL
+      end
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="automatic batching caching counter counts delivery efficient notification notifications polymorphic preferences queries read scopes smart system tracking unread" data-name="smart notification system with read tracking">
+  <h3>Smart Notification System with Read Tracking</h3>
+  <p>Polymorphic notifications with automatic batching, read/unread tracking, and delivery preferences. Uses counter caching for unread counts and scopes for efficient queries.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/notification.rb" target="_blank">app/models/notification.rb</a></div>
+  <pre><code>class Notification &lt; ApplicationRecord
+  belongs_to :account
+  belongs_to :recipient, class_name: &quot;User&quot;, counter_cache: :unread_notifications_count
+  belongs_to :notifiable, polymorphic: true
+
+  scope :unread, -&gt; { where(read_at: nil) }
+  scope :read, -&gt; { where.not(read_at: nil) }
+  scope :recent, -&gt; { order(created_at: :desc) }
+
+  def mark_as_read!
+    update!(read_at: Time.current) if unread?
+  end
+
+  def unread?
+    read_at.nil?
+  end
+
+  class &lt;&lt; self
+    def mark_all_as_read_for(user)
+      where(recipient: user).unread.update_all(read_at: Time.current)
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="chainable complex construction controllers encapsulates filterable filtering logic making object parameter pattern query reusable sanitization scopes separates testable" data-name="filterable query object pattern">
+  <h3>Filterable Query Object Pattern</h3>
+  <p>Encapsulates complex filtering logic with chainable scopes and parameter sanitization. Separates query construction from controllers, making it testable and reusable.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/filter.rb" target="_blank">app/models/filter.rb</a></div>
+  <pre><code>class Filter
+  attr_reader :params, :scope
+
+  def initialize(scope, params = {})
+    @scope = scope
+    @params = params.with_indifferent_access
+  end
+
+  def apply
+    @scope = apply_status_filter
+    @scope = apply_assignee_filter
+    @scope = apply_label_filter
+    @scope = apply_search_filter
+    @scope = apply_sort
+    @scope
+  end
+
+  private
+    def apply_status_filter
+      return scope unless params[:status].present?
+      scope.where(status: params[:status])
+    end
+
+    def apply_assignee_filter
+      return scope unless params[:assignee_id].present?
+      scope.where(assignee_id: params[:assignee_id])
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="acts acts_as_list automatically cards columns conditions drag drop essential gap gem handles interfaces items kanban list maintain management pattern position positioned race reordering within" data-name="positioned items with acts as list pattern">
+  <h3>Positioned Items with Acts As List Pattern</h3>
+  <p>Cards maintain position within columns using acts_as_list gem pattern. Automatically handles reordering, gap management, and race conditions. Essential for drag-and-drop Kanban interfaces.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/column/positioned.rb" target="_blank">app/models/column/positioned.rb</a></div>
+  <pre><code>module Column::Positioned
+  extend ActiveSupport::Concern
+
+  included do
+    acts_as_list scope: :board, top_of_list: 0
+
+    before_create :set_initial_position
+  end
+
+  def move_to_position(new_position)
+    transaction do
+      remove_from_list
+      insert_at(new_position)
+      save!
+    end
+  end
+
+  private
+    def set_initial_position
+      self.position ||= board.columns.maximum(:position).to_i + 1
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="models" data-keywords="build card commentable composes composite composition concern concerns demonstrates domain each entropic etc focused functionality keeping model models multiple pattern positionable rails rich scale testable while" data-name="composite concern pattern for rich domain models">
+  <h3>Composite Concern Pattern for Rich Domain Models</h3>
+  <p>Card model composes multiple concerns (Entropic, Positionable, Commentable, etc.) to build rich functionality while keeping each concern focused and testable. Demonstrates Rails' concern composition pattern at scale.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/card.rb" target="_blank">app/models/card.rb</a></div>
+  <pre><code>class Card &lt; ApplicationRecord
+  include Broadcastable
+  include Closeable
+  include Colored
+  include Engagement
+  include Entropic
+  include Eventable
+  include Exportable
+  include Golden
+  include Mentions
+  include Multistep
+  include NotNow
+  include Pinnable
+  include Postponable
+  include Promptable
+  include Readable
+  include Searchable
+  include Stallable
+  include Statuses
+  include Taggable
+  include Triageable
+  include Watchable
+  include Assignable
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<h2 id="controllers">Controllers (26 patterns)</h2>
 <div class="pattern" data-category="controllers" data-keywords="applicationcontroller composition concerns focused keep lean minimal" data-name="lean applicationcontroller">
   <h3>Lean ApplicationController</h3>
   <p>Use concerns to keep ApplicationController minimal and focused on composition.</p>
@@ -1269,7 +1532,217 @@ end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
 end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
 </div>
 
-<h2 id="frontend">Frontend (Hotwire) (26 patterns)</h2>
+<div class="pattern" data-category="controllers" data-keywords="authentication email exchanged expiration implements link links magic passwordless receive secure session signed token users verified via which" data-name="passwordless magic link authentication">
+  <h3>Passwordless Magic Link Authentication</h3>
+  <p>Implements secure passwordless authentication using signed magic links with expiration. Users receive a magic link via email, which is verified and exchanged for a session token.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/sessions_controller.rb" target="_blank">app/controllers/sessions_controller.rb</a></div>
+  <pre><code>class SessionsController &lt; ApplicationController
+  skip_before_action :authenticate
+  allow_unauthenticated_access only: %i[ new create ]
+
+  def new
+  end
+
+  def create
+    if identity = Identity.find_by(email_address: params[:email_address])
+      send_magic_link_for(identity)
+      redirect_to new_session_path, notice: &quot;Check your email for a sign-in link&quot;
+    else
+      redirect_to new_session_path, alert: &quot;Email not found&quot;
+    end
+  end
+
+  private
+    def send_magic_link_for(identity)
+      MagicLink.create!(identity: identity).deliver
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="account all based concern current currentrequest extracted implements multi path requests scoped scoping tenancy through url" data-name="multi-tenancy with url-based account scoping">
+  <h3>Multi-Tenancy with URL-Based Account Scoping</h3>
+  <p>Implements multi-tenancy through URL path-based account scoping using CurrentRequest concern. All requests are scoped to the current account extracted from the URL.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/concerns/current_request.rb" target="_blank">app/controllers/concerns/current_request.rb</a></div>
+  <pre><code>module CurrentRequest
+  extend ActiveSupport::Concern
+
+  included do
+    before_action :set_current_request_details
+  end
+
+  private
+    def set_current_request_details
+      Current.user_agent = request.user_agent
+      Current.ip_address = request.ip
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="automatically boardscoped cardscoped clean concerns controller load nested parent pattern queries resource resources scope scoping" data-name="nested resource scoping with concerns">
+  <h3>Nested Resource Scoping with Concerns</h3>
+  <p>Clean nested resource scoping pattern using controller concerns. BoardScoped and CardScoped concerns automatically load parent resources and scope queries.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/concerns/board_scoped.rb" target="_blank">app/controllers/concerns/board_scoped.rb</a></div>
+  <pre><code>module BoardScoped
+  extend ActiveSupport::Concern
+
+  included do
+    before_action :set_board
+  end
+
+  private
+    def set_board
+      @board = Current.account.boards.find(params[:board_id])
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="approaches authorization based both concern declarative different imperative implements permissions provides role scenarios" data-name="authorization with role-based permissions">
+  <h3>Authorization with Role-Based Permissions</h3>
+  <p>Implements role-based authorization using an Authorization concern. Provides both declarative and imperative approaches for different scenarios.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/concerns/authorization.rb" target="_blank">app/controllers/concerns/authorization.rb</a></div>
+  <pre><code>module Authorization
+  extend ActiveSupport::Concern
+
+  class Unauthorized &lt; StandardError; end
+
+  included do
+    rescue_from Unauthorized do
+      redirect_to root_path, alert: &quot;You&#x27;re not authorized&quot;
+    end
+  end
+
+  private
+    def authorize_admin
+      authorize! Current.user.admin?
+    end
+
+    def authorize!(allowed)
+      raise Unauthorized unless allowed
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="applications automatically content enhances flash messages prepending responses stream turbo" data-name="turbo stream flash messages">
+  <h3>Turbo Stream Flash Messages</h3>
+  <p>Enhances flash messages for Turbo applications by automatically prepending flash content to Turbo Stream responses.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/concerns/turbo_flash.rb" target="_blank">app/controllers/concerns/turbo_flash.rb</a></div>
+  <pre><code>module TurboFlash
+  extend ActiveSupport::Concern
+
+  included do
+    after_action :prepend_flash_to_turbo_response, if: -&gt; { turbo_frame_request? }
+  end
+
+  private
+    def prepend_flash_to_turbo_response
+      return unless flash.any?
+      response.body = turbo_stream.prepend(&quot;flash&quot;, partial: &quot;shared/flash&quot;) + response.body
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="adds appropriate browser browsers enables headers modern native page response setting smooth support transitions view" data-name="native view transitions support">
+  <h3>Native View Transitions Support</h3>
+  <p>Adds support for native browser view transitions by setting appropriate response headers. Enables smooth page transitions in modern browsers.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/concerns/view_transitions.rb" target="_blank">app/controllers/concerns/view_transitions.rb</a></div>
+  <pre><code>module ViewTransitions
+  extend ActiveSupport::Concern
+
+  included do
+    before_action :set_view_transition_class
+  end
+
+  private
+    def set_view_transition_class
+      @view_transition_class = view_transition_class
+    end
+
+    def view_transition_class
+      &quot;view-transition&quot;
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="action between cards columns complex controllers focused keeps like moving operations single testable" data-name="single-action controllers for complex operations">
+  <h3>Single-Action Controllers for Complex Operations</h3>
+  <p>Uses single-action controllers for complex operations like moving cards between columns. Keeps controllers focused and testable.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/cards/columns_controller.rb" target="_blank">app/controllers/cards/columns_controller.rb</a></div>
+  <pre><code>class Cards::ColumnsController &lt; ApplicationController
+  include CardScoped
+
+  def update
+    @card.move_to_column(column, position: params[:position])
+    head :ok
+  end
+
+  private
+    def column
+      @card.board.columns.find(params[:column_id])
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="creates crud default destroys dom first implements operations responses return stream targeted turbo updates" data-name="turbo stream-first crud operations">
+  <h3>Turbo Stream-First CRUD Operations</h3>
+  <p>Implements CRUD operations with Turbo Stream responses by default. Creates, updates, and destroys return targeted DOM updates.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/cards/comments_controller.rb" target="_blank">app/controllers/cards/comments_controller.rb</a></div>
+  <pre><code>class Cards::CommentsController &lt; ApplicationController
+  include CardScoped
+
+  def create
+    @comment = @card.comments.create!(comment_params.merge(creator: Current.user))
+  end
+
+  def destroy
+    @comment = @card.comments.find(params[:id])
+    @comment.destroy!
+  end
+
+  private
+    def comment_params
+      params.require(:comment).permit(:body)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="access account authentication clean controller controllers creating dedicated facing implements inheritance maintain namespace pages pattern public scoping skip" data-name="public access controller inheritance">
+  <h3>Public Access Controller Inheritance</h3>
+  <p>Implements a clean pattern for public-facing pages by creating a dedicated Public namespace. Public controllers skip authentication but maintain account scoping.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/public/base_controller.rb" target="_blank">app/controllers/public/base_controller.rb</a></div>
+  <pre><code>class Public::BaseController &lt; ApplicationController
+  skip_before_action :authenticate
+  allow_unauthenticated_access
+
+  layout &quot;public&quot;
+
+  before_action :set_board
+
+  private
+    def set_board
+      @board = Board.published.find_by!(publish_key: params[:key])
+      Current.account = @board.account
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="controllers" data-keywords="business complex concerns controller controllers delegated delegation demonstrates focused http lean logic methods model object pattern remain service thin where" data-name="lean controller with service object delegation">
+  <h3>Lean Controller with Service Object Delegation</h3>
+  <p>Demonstrates lean controller pattern where complex business logic is delegated to model methods. Controllers remain thin, focused on HTTP concerns.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/controllers/cards/closures_controller.rb" target="_blank">app/controllers/cards/closures_controller.rb</a></div>
+  <pre><code>class Cards::ClosuresController &lt; ApplicationController
+  include CardScoped
+
+  def create
+    @card.close!(reason: params[:reason])
+  end
+
+  def destroy
+    @card.reopen!
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<h2 id="frontend">Frontend (Hotwire) (36 patterns)</h2>
 <div class="pattern" data-category="frontend" data-keywords="append containers content dom existing new stream streams turbo" data-name="turbo stream append">
   <h3>Turbo Stream Append</h3>
   <p>Append new content to existing DOM containers with Turbo Streams.</p>
@@ -2081,7 +2554,284 @@ end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
 end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
 </div>
 
-<h2 id="infrastructure">Infrastructure (17 patterns)</h2>
+<div class="pattern" data-category="frontend" data-keywords="api controller drag drop events handles html5 implements kanban native position requests stimulus stream style turbo updates via" data-name="drag and drop with native html5 api">
+  <h3>Drag and Drop with Native HTML5 API</h3>
+  <p>Implements kanban-style drag-and-drop using native HTML5 drag events with Stimulus controller. Handles position updates via Turbo Stream requests.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/drag_and_drop_controller.js" target="_blank">app/javascript/controllers/drag_and_drop_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+
+export default class extends Controller {
+  static targets = [&quot;item&quot;]
+  static values = { url: String }
+
+  dragstart(event) {
+    event.dataTransfer.effectAllowed = &quot;move&quot;
+    event.dataTransfer.setData(&quot;text/plain&quot;, event.target.dataset.id)
+    event.target.classList.add(&quot;dragging&quot;)
+  }
+
+  dragover(event) {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = &quot;move&quot;
+  }
+
+  drop(event) {
+    event.preventDefault()
+    const id = event.dataTransfer.getData(&quot;text/plain&quot;)
+    const position = this.calculatePosition(event.target)
+    this.updatePosition(id, position)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="content dialog element frame frames html5 integrates integration leverages loading management modal native remote seamlessly stimulus turbo" data-name="native dialog with turbo frame integration">
+  <h3>Native Dialog with Turbo Frame Integration</h3>
+  <p>Leverages HTML5 native `<dialog>` element with Stimulus for modal management. Integrates seamlessly with Turbo Frames for loading remote content.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/dialog_controller.js" target="_blank">app/javascript/controllers/dialog_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+
+export default class extends Controller {
+  static targets = [&quot;dialog&quot;]
+
+  open() {
+    this.dialogTarget.showModal()
+  }
+
+  close() {
+    this.dialogTarget.close()
+  }
+
+  clickOutside(event) {
+    if (event.target === this.dialogTarget) {
+      this.close()
+    }
+  }
+
+  closeWithKeyboard(event) {
+    if (event.code == &quot;Escape&quot;) {
+      this.close()
+    }
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="accessible aria arrow autocomplete combobox enter escape fully implements keyboard keys navigation support" data-name="accessible combobox with keyboard navigation">
+  <h3>Accessible Combobox with Keyboard Navigation</h3>
+  <p>Implements a fully accessible combobox/autocomplete with ARIA support and keyboard navigation (Arrow keys, Enter, Escape).</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/combobox_controller.js" target="_blank">app/javascript/controllers/combobox_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+
+export default class extends Controller {
+  static targets = [&quot;input&quot;, &quot;list&quot;, &quot;option&quot;]
+
+  filter() {
+    const query = this.inputTarget.value.toLowerCase()
+
+    this.optionTargets.forEach(option =&gt; {
+      const text = option.textContent.toLowerCase()
+      option.hidden = !text.includes(query)
+    })
+  }
+
+  navigate(event) {
+    switch(event.key) {
+      case &quot;ArrowDown&quot;: this.selectNext(); break
+      case &quot;ArrowUp&quot;: this.selectPrevious(); break
+      case &quot;Enter&quot;: this.commit(); break
+      case &quot;Escape&quot;: this.close(); break
+    }
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="action actions attributes controller creates data dispatch global hotkey keyboard keys maps shortcut stimulus system" data-name="global hotkey system with action dispatch">
+  <h3>Global Hotkey System with Action Dispatch</h3>
+  <p>Creates a global keyboard shortcut system using Stimulus. Maps keys to controller actions with data attributes.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/hotkey_controller.js" target="_blank">app/javascript/controllers/hotkey_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+
+export default class extends Controller {
+  static values = { key: String }
+
+  connect() {
+    this.boundHandler = this.handleKeydown.bind(this)
+    document.addEventListener(&quot;keydown&quot;, this.boundHandler)
+  }
+
+  disconnect() {
+    document.removeEventListener(&quot;keydown&quot;, this.boundHandler)
+  }
+
+  handleKeydown(event) {
+    if (this.shouldIgnore(event)) return
+    if (event.key === this.keyValue) {
+      event.preventDefault()
+      this.element.click()
+    }
+  }
+
+  shouldIgnore(event) {
+    return [&quot;INPUT&quot;, &quot;TEXTAREA&quot;, &quot;SELECT&quot;].includes(event.target.tagName)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="auto automatic debounce debouncing feedback form implements indicators overload prevent save saved saving server shows status visual" data-name="auto-save with debouncing and visual feedback">
+  <h3>Auto-Save with Debouncing and Visual Feedback</h3>
+  <p>Implements automatic form saving with debounce to prevent server overload. Shows 'Saving...' and 'Saved' status indicators.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/auto_save_controller.js" target="_blank">app/javascript/controllers/auto_save_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+
+export default class extends Controller {
+  static targets = [&quot;form&quot;, &quot;status&quot;]
+  static values = { delay: { type: Number, default: 1000 } }
+
+  save() {
+    clearTimeout(this.timeout)
+    this.timeout = setTimeout(() =&gt; this.submit(), this.delayValue)
+  }
+
+  submit() {
+    this.statusTarget.textContent = &quot;Saving...&quot;
+    this.formTarget.requestSubmit()
+    setTimeout(() =&gt; {
+      this.statusTarget.textContent = &quot;Saved&quot;
+    }, 500)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="actioncable browser channels integrates notification notifications permissions push rails real requests subscribes time updates web" data-name="web push notifications with actioncable">
+  <h3>Web Push Notifications with ActionCable</h3>
+  <p>Integrates browser push notifications with Rails ActionCable for real-time updates. Requests notification permissions and subscribes to channels.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/notifications_controller.js" target="_blank">app/javascript/controllers/notifications_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+import consumer from &quot;../channels/consumer&quot;
+
+export default class extends Controller {
+  static targets = [&quot;count&quot;, &quot;tray&quot;]
+
+  connect() {
+    this.requestPermission()
+    this.subscribe()
+  }
+
+  requestPermission() {
+    if (&quot;Notification&quot; in window &amp;&amp; Notification.permission === &quot;default&quot;) {
+      Notification.requestPermission()
+    }
+  }
+
+  subscribe() {
+    this.subscription = consumer.subscriptions.create(&quot;NotificationsChannel&quot;, {
+      received: (data) =&gt; this.handleNotification(data)
+    })
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="client filtering implements management persistence real side state stimulus time url urlsearchparams via" data-name="client-side filtering with url persistence">
+  <h3>Client-Side Filtering with URL Persistence</h3>
+  <p>Implements real-time client-side filtering using Stimulus with URL state management via URLSearchParams.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/filter_controller.js" target="_blank">app/javascript/controllers/filter_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+
+export default class extends Controller {
+  static targets = [&quot;item&quot;, &quot;input&quot;]
+
+  connect() {
+    this.loadFromURL()
+  }
+
+  filter() {
+    const query = this.inputTarget.value.toLowerCase()
+
+    this.itemTargets.forEach(item =&gt; {
+      item.hidden = !item.textContent.toLowerCase().includes(query)
+    })
+
+    this.updateURL(query)
+  }
+
+  updateURL(query) {
+    const url = new URL(window.location)
+    query ? url.searchParams.set(&quot;q&quot;, query) : url.searchParams.delete(&quot;q&quot;)
+    window.history.replaceState({}, &quot;&quot;, url)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="api button changing click clipboard confirmation content copy feedback instant modern one provides text visual" data-name="copy to clipboard with visual confirmation">
+  <h3>Copy to Clipboard with Visual Confirmation</h3>
+  <p>Uses modern Clipboard API to copy content with one click. Provides instant visual feedback by changing button text.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/copy_to_clipboard_controller.js" target="_blank">app/javascript/controllers/copy_to_clipboard_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+
+export default class extends Controller {
+  static targets = [&quot;source&quot;]
+  static values = { successText: { type: String, default: &quot;Copied!&quot; } }
+
+  copy() {
+    navigator.clipboard.writeText(this.sourceTarget.value || this.sourceTarget.textContent)
+    this.showConfirmation()
+  }
+
+  showConfirmation() {
+    const original = this.element.textContent
+    this.element.textContent = this.successTextValue
+    setTimeout(() =&gt; this.element.textContent = original, 2000)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="api css integration leverages navigation page smooth startviewtransition transitions turbo view wraps" data-name="css view transitions with turbo integration">
+  <h3>CSS View Transitions with Turbo Integration</h3>
+  <p>Leverages CSS View Transitions API for smooth page transitions with Turbo. Wraps Turbo navigation in startViewTransition().</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/turbo_navigation_controller.js" target="_blank">app/javascript/controllers/turbo_navigation_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+
+export default class extends Controller {
+  connect() {
+    document.addEventListener(&quot;turbo:before-render&quot;, this.beforeRender.bind(this))
+  }
+
+  beforeRender(event) {
+    if (document.startViewTransition) {
+      event.preventDefault()
+      document.startViewTransition(() =&gt; event.detail.resume())
+    }
+  }
+
+  disconnect() {
+    document.removeEventListener(&quot;turbo:before-render&quot;, this.beforeRender)
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="frontend" data-keywords="auto automatically change filters forms input live partial perfect search streams submit submits turbo updates" data-name="auto-submit forms with turbo streams">
+  <h3>Auto-Submit Forms with Turbo Streams</h3>
+  <p>Automatically submits forms on input change, perfect for filters and live search. Uses Turbo Streams for partial updates.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/javascript/controllers/auto_submit_controller.js" target="_blank">app/javascript/controllers/auto_submit_controller.js</a></div>
+  <pre><code>import { Controller } from &quot;@hotwired/stimulus&quot;
+
+export default class extends Controller {
+  static values = { delay: { type: Number, default: 300 } }
+
+  submit() {
+    clearTimeout(this.timeout)
+    this.timeout = setTimeout(() =&gt; {
+      this.element.requestSubmit()
+    }, this.delayValue)
+  }
+
+  submitNow() {
+    clearTimeout(this.timeout)
+    this.element.requestSubmit()
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<h2 id="infrastructure">Infrastructure (27 patterns)</h2>
 <div class="pattern" data-category="infrastructure" data-keywords="defensive external fetch fetching http limits prevention protection redirect size ssrf urls" data-name="defensive http fetching">
   <h3>Defensive HTTP Fetching</h3>
   <p>Fetch external URLs with size limits, redirect protection, and SSRF prevention.</p>
@@ -2522,9 +3272,233 @@ end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
 &lt;/body&gt;</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
 </div>
 
+<div class="pattern" data-category="infrastructure" data-keywords="cable cache configuration data database databases demonstrates multi primary queue rails separate setup solid stack" data-name="multi-database configuration with solid stack">
+  <h3>Multi-Database Configuration with Solid Stack</h3>
+  <p>Demonstrates Rails 7.1+ multi-database setup using separate databases for primary data, Solid Cache, Solid Queue, and Solid Cable.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/config/database.yml" target="_blank">config/database.yml</a></div>
+  <pre><code>production:
+  primary:
+    &lt;&lt;: *default
+    database: fizzy_production
+  cache:
+    &lt;&lt;: *default
+    database: fizzy_cache_production
+    migrations_paths: db/cache_migrate
+  queue:
+    &lt;&lt;: *default
+    database: fizzy_queue_production
+    migrations_paths: db/queue_migrate
+  cable:
+    &lt;&lt;: *default
+    database: fizzy_cable_production
+    migrations_paths: db/cable_migrate</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="account across activejob automatically background context current custom execution extensions job jobs restore scoped serialization serialize that" data-name="account-scoped background jobs with serialization">
+  <h3>Account-Scoped Background Jobs with Serialization</h3>
+  <p>Custom ActiveJob extensions that automatically serialize and restore the current account context across job execution.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/lib/fizzy_active_job_extensions.rb" target="_blank">lib/fizzy_active_job_extensions.rb</a></div>
+  <pre><code>module FizzyActiveJobExtensions
+  extend ActiveSupport::Concern
+
+  included do
+    attr_accessor :account_id
+
+    before_enqueue { self.account_id = Current.account&amp;.id }
+    before_perform { Current.account = Account.find(account_id) if account_id }
+  end
+end
+
+Rails.application.config.after_initialize do
+  ActiveJob::Base.include FizzyActiveJobExtensions
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="based configuration declarative feature job queue recurring solid task tasks yaml" data-name="recurring tasks configuration with solid queue">
+  <h3>Recurring Tasks Configuration with Solid Queue</h3>
+  <p>Declarative YAML-based recurring job configuration using Solid Queue's recurring task feature.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/config/recurring.yml" target="_blank">config/recurring.yml</a></div>
+  <pre><code>production:
+  auto_postpone_stale_cards:
+    class: AutoPostponeStaleCardsJob
+    schedule: every hour
+  deliver_notification_bundles:
+    class: DeliverNotificationBundlesJob
+    schedule: every 30 minutes
+  cleanup_expired_magic_links:
+    class: CleanupExpiredMagicLinksJob
+    schedule: every day at 3am</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="account attributes context current custom extraction extracts middleware multi path rack sets tenancy that url" data-name="account extraction middleware for multi-tenancy">
+  <h3>Account Extraction Middleware for Multi-Tenancy</h3>
+  <p>Custom Rack middleware that extracts account context from URL path and sets it on Current attributes.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/lib/account_slug/extractor.rb" target="_blank">lib/account_slug/extractor.rb</a></div>
+  <pre><code>module AccountSlug
+  class Extractor
+    def initialize(app)
+      @app = app
+    end
+
+    def call(env)
+      request = ActionDispatch::Request.new(env)
+
+      if (account_id = extract_account_id(request.path))
+        env[&quot;SCRIPT_NAME&quot;] = &quot;/#{account_id}&quot;
+        env[&quot;PATH_INFO&quot;] = request.path.sub(%r{^/#{account_id}}, &quot;&quot;)
+        env[&quot;fizzy.account_id&quot;] = account_id
+      end
+
+      @app.call(env)
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="abstract activerecord backed classes creating database each multi pattern separate setup solid stack" data-name="database-backed abstract classes for solid stack">
+  <h3>Database-Backed Abstract Classes for Solid Stack</h3>
+  <p>Pattern for creating separate abstract ActiveRecord classes for each database in multi-database setup.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/queue_record.rb" target="_blank">app/models/queue_record.rb</a></div>
+  <pre><code>class QueueRecord &lt; ActiveRecord::Base
+  self.abstract_class = true
+
+  connects_to database: { writing: :queue, reading: :queue }
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="configuration fts5 full implementation multi scalable search shard sharded sqlite text" data-name="sharded sqlite full-text search configuration">
+  <h3>Sharded SQLite Full-Text Search Configuration</h3>
+  <p>Multi-shard search implementation using SQLite FTS5 for scalable full-text search.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/search/record.rb" target="_blank">app/models/search/record.rb</a></div>
+  <pre><code>class Search::Record &lt; ApplicationRecord
+  self.abstract_class = true
+
+  class &lt;&lt; self
+    def adapter
+      if mysql?
+        Search::Record::Mysql
+      else
+        Search::Record::Sqlite
+      end
+    end
+
+    def mysql?
+      connection.adapter_name.downcase.include?(&quot;mysql&quot;)
+    end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="base36 compact custom encoding generates generation identifiers safe shorter url uuid uuids uuidv7" data-name="custom uuid generation with base36 encoding">
+  <h3>Custom UUID Generation with Base36 Encoding</h3>
+  <p>Generates compact, URL-safe UUIDs using UUIDv7 with base36 encoding for shorter identifiers.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/concerns/identifiable.rb" target="_blank">app/models/concerns/identifiable.rb</a></div>
+  <pre><code>module Identifiable
+  extend ActiveSupport::Concern
+
+  included do
+    before_create :set_external_id, if: -&gt; { respond_to?(:external_id) }
+  end
+
+  private
+    def set_external_id
+      self.external_id ||= generate_external_id
+    end
+
+    def generate_external_id
+      SecureRandom.uuid_v7.delete(&quot;-&quot;).to_i(16).to_s(36)
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="api complete cross implementation keys notifications platform push vapid web" data-name="web push notifications with vapid keys">
+  <h3>Web Push Notifications with VAPID Keys</h3>
+  <p>Complete implementation of Web Push API using VAPID keys for cross-platform push notifications.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/models/notification_pusher.rb" target="_blank">app/models/notification_pusher.rb</a></div>
+  <pre><code>class NotificationPusher
+  def initialize(subscription)
+    @subscription = subscription
+  end
+
+  def push(title:, body:, url:)
+    WebPush.payload_send(
+      message: JSON.generate({ title: title, body: body, url: url }),
+      endpoint: @subscription.endpoint,
+      p256dh: @subscription.p256dh_key,
+      auth: @subscription.auth_key,
+      vapid: vapid_keys
+    )
+  rescue WebPush::ExpiredSubscription
+    @subscription.destroy
+  end
+
+  private
+    def vapid_keys
+      {
+        public_key: Rails.application.credentials.vapid_public_key,
+        private_key: Rails.application.credentials.vapid_private_key
+      }
+    end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="accessory based configuration databases deployment docker healthchecks kamal production ready" data-name="kamal deployment configuration">
+  <h3>Kamal Deployment Configuration</h3>
+  <p>Production-ready Kamal (Docker-based deployment) configuration with healthchecks and accessory databases.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/config/deploy.yml" target="_blank">config/deploy.yml</a></div>
+  <pre><code>service: fizzy
+image: basecamp/fizzy
+
+servers:
+  web:
+    hosts:
+      - fizzy.example.com
+    labels:
+      traefik.http.routers.fizzy.rule: Host(`fizzy.example.com`)
+
+registry:
+  server: ghcr.io
+  username: basecamp
+
+healthcheck:
+  path: /up
+  interval: 10s
+
+accessories:
+  db:
+    image: mysql:8.0
+    directories:
+      - data:/var/lib/mysql</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
+<div class="pattern" data-category="infrastructure" data-keywords="account actioncable authentication connection context cookies scoping secure sets signed that verifies" data-name="actioncable authentication with account scoping">
+  <h3>ActionCable Authentication with Account Scoping</h3>
+  <p>Secure ActionCable connection authentication that verifies signed cookies and sets account context.</p>
+  <div class="file">source: <a href="https://github.com/basecamp/fizzy/blob/main/app/channels/application_cable/connection.rb" target="_blank">app/channels/application_cable/connection.rb</a></div>
+  <pre><code>module ApplicationCable
+  class Connection &lt; ActionCable::Connection::Base
+    identified_by :current_user
+
+    def connect
+      self.current_user = find_verified_user
+      Current.account = current_user.account
+    end
+
+    private
+      def find_verified_user
+        if verified_user = User.find_by(id: cookies.signed[:user_id])
+          verified_user
+        else
+          reject_unauthorized_connection
+        end
+      end
+  end
+end</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+
 
   <div class="generated">
-    Generated: 2025-11-19 14:33:48 UTC | <a href="https://github.com/swistaczek/ruby-snippets">Ruby & Rails Patterns Collection</a>
+    Generated: 2025-12-02 23:31:55 UTC | <a href="https://github.com/swistaczek/ruby-snippets">Ruby & Rails Patterns Collection</a>
   </div>
 
   <script src="search.js"></script>

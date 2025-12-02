@@ -202,27 +202,63 @@ def generate_html(sections, frontmatter, template_path, output_path):
 
     return total_patterns
 
+def merge_sections(all_sections):
+    """Merge sections from multiple pattern files."""
+    merged = {}
+    for sections in all_sections:
+        for section_name, patterns in sections.items():
+            if section_name not in merged:
+                merged[section_name] = []
+            merged[section_name].extend(patterns)
+    return merged
+
 def main():
     """Main conversion process."""
     # Paths
     project_root = Path(__file__).parent.parent
-    md_path = project_root / 'once-campfire' / 'rails-patterns.md'
     template_path = project_root / 'template.html'
     output_path = project_root / 'docs' / 'index.html'
 
-    print(f"Converting {md_path} to {output_path}...")
+    # Pattern files to process
+    pattern_files = [
+        project_root / 'once-campfire' / 'rails-patterns.md',
+        project_root / 'fizzy' / 'rails-patterns.md',
+    ]
 
-    # Parse markdown
-    frontmatter, content = parse_markdown_file(md_path)
-    print(f"✓ Parsed frontmatter: {frontmatter.get('title', 'N/A')}")
+    all_sections = []
+    total_parsed = 0
 
-    # Extract patterns
-    sections = parse_patterns(content)
-    section_count = sum(len(patterns) for patterns in sections.values())
-    print(f"✓ Extracted {section_count} patterns from {len(sections)} sections")
+    for md_path in pattern_files:
+        if not md_path.exists():
+            print(f"⚠ Skipping {md_path} (not found)")
+            continue
+
+        print(f"Processing {md_path.parent.name}/{md_path.name}...")
+
+        # Parse markdown
+        frontmatter, content = parse_markdown_file(md_path)
+        print(f"  ✓ Parsed: {frontmatter.get('title', md_path.parent.name)}")
+
+        # Extract patterns
+        sections = parse_patterns(content)
+        section_count = sum(len(patterns) for patterns in sections.values())
+        print(f"  ✓ Extracted {section_count} patterns")
+        total_parsed += section_count
+
+        all_sections.append(sections)
+
+    # Merge all sections
+    merged_sections = merge_sections(all_sections)
+    print(f"\n✓ Merged {total_parsed} patterns from {len(pattern_files)} files")
+
+    # Combined frontmatter
+    combined_frontmatter = {
+        'title': 'Ruby & Rails Patterns Collection',
+        'description': 'Production-ready patterns from Basecamp Campfire and 37signals Fizzy'
+    }
 
     # Generate HTML
-    total_patterns = generate_html(sections, frontmatter, template_path, output_path)
+    total_patterns = generate_html(merged_sections, combined_frontmatter, template_path, output_path)
     print(f"✓ Generated HTML with {total_patterns} patterns")
 
     # Report file size
