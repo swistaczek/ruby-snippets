@@ -216,12 +216,29 @@
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => {
         showModalCopyFeedback(pre);
+      }).catch(() => {
+        copyViaTextarea(text);
+        showModalCopyFeedback(pre);
       });
     } else {
-      fallbackCopy(text, { parentElement: pre });
+      copyViaTextarea(text);
       showModalCopyFeedback(pre);
     }
   };
+
+  /**
+   * Copy text using textarea fallback
+   */
+  function copyViaTextarea(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(textarea);
+  }
 
   /**
    * Show feedback on modal pre element
