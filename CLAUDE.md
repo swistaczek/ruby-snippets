@@ -15,14 +15,19 @@ This repository curates production-ready Ruby and Rails patterns extracted from 
 ruby-snippets/
 ├── .claude/
 │   └── agents/              # Pattern extraction agents
-│       ├── basecamp-models.md
-│       ├── basecamp-controllers.md
-│       ├── basecamp-frontend.md
-│       ├── basecamp-infrastructure.md
-│       ├── basecamp-guide-writer.md
+│       ├── rails-models.md
+│       ├── rails-controllers.md
+│       ├── rails-frontend.md
+│       ├── rails-infrastructure.md
+│       ├── rails-guide-writer.md
 │       └── rails-docs-linker.md
-├── once-campfire/          # Basecamp Campfire patterns (90+ patterns)
-├── docs/                   # Generated pattern guides
+├── once-campfire/          # Basecamp Campfire patterns (85 patterns)
+│   ├── rails-patterns.md
+│   └── README.md
+├── fizzy/                  # 37signals Fizzy patterns (40 patterns)
+│   ├── rails-patterns.md
+│   └── README.md
+├── docs/                   # GitHub Pages (interactive browser)
 └── context7.json          # Context7 configuration
 ```
 
@@ -31,8 +36,14 @@ ruby-snippets/
 ### Once Campfire (Basecamp)
 - **Path:** `once-campfire/`
 - **Technology:** Rails 7 + Hotwire (Turbo + Stimulus)
-- **Patterns:** 90+ covering models, controllers, frontend, infrastructure
+- **Patterns:** 85 covering models, controllers, frontend, infrastructure
 - **Source:** https://github.com/basecamp/once-campfire
+
+### Fizzy (37signals)
+- **Path:** `fizzy/`
+- **Technology:** Rails main branch + Hotwire + Solid Stack (Queue/Cache/Cable)
+- **Patterns:** 40 covering models, controllers, frontend, infrastructure
+- **Source:** https://github.com/basecamp/fizzy
 
 ## Pattern Extraction Agents
 
@@ -66,7 +77,7 @@ When using these agents with your own Rails project, customize this section:
 
 ### Output Configuration
 - **Output Directory:** `docs/`
-- **Output Filename:** `rails-patterns-guide.html`
+- **Output Filename:** `rails-patterns.md`
 - **Documentation Title:** `Rails Patterns Guide`
 ```
 
@@ -99,8 +110,8 @@ When using these agents with your own Rails project, customize this section:
 **@rails-guide-writer** - Pattern Guide Generator
 - Orchestrates all analyst agents
 - Reads this CLAUDE.md for project configuration
-- Generates comprehensive HTML style guide
-- Output: `docs/[configured-filename].html`
+- Generates comprehensive Markdown pattern guide
+- Output: `[project-name]/rails-patterns.md`
 
 **Usage:**
 ```
@@ -110,16 +121,16 @@ When using these agents with your own Rails project, customize this section:
 The agent will:
 1. Read this CLAUDE.md for project context
 2. Invoke all 4 analyst agents sequentially
-3. Compile results into clean, minimal HTML
+3. Compile results into clean Markdown with YAML frontmatter
 4. Write to configured output path
 
 #### 3. Enhancement Agent
 
 **@rails-docs-linker** - Documentation Link Enhancer
-- Reads generated HTML guide
+- Reads generated Markdown guide
 - Uses Context7 MCP to find relevant Rails documentation
 - Adds clickable links to Rails API and Guides
-- Updates HTML in-place
+- Updates Markdown in-place
 
 **Usage:**
 ```
@@ -218,7 +229,7 @@ In your Rails project root, create `CLAUDE.md` with this structure:
 
 ### Output Configuration
 - **Output Directory:** `docs/`
-- **Output Filename:** `rails-patterns-guide.html`
+- **Output Filename:** `rails-patterns.md`
 - **Documentation Title:** `My Rails App - Patterns Guide`
 
 ## Pattern Extraction Agents
@@ -250,14 +261,13 @@ If CLAUDE.md is missing or incomplete, agents will auto-detect:
 
 ## Output Format
 
-Generated guides are self-contained HTML files with:
-- Embedded CSS (no external dependencies)
-- Monospace font for technical aesthetic
-- Mobile-responsive design
-- Syntax-highlighted code snippets
-- Source file links (if repo URL configured)
-- Rails documentation links (if rails-docs-linker run)
-- Generation timestamp
+Generated guides are Markdown files with YAML frontmatter:
+- **Frontmatter:** title, description, topics, source URL
+- **Table of Contents:** Section links with pattern counts
+- **Patterns:** H3 headings, descriptions, source links, code blocks
+- **Source attribution:** Links to GitHub files
+- **Rails docs links:** Added by rails-docs-linker agent
+- **Generation timestamp:** Footer with date
 
 ## Best Practices
 
@@ -298,17 +308,18 @@ Generated guides are self-contained HTML files with:
 
 To add patterns from a new Rails project to this repository:
 
-1. Run agents against the project to generate patterns
-2. Create new directory: `[project-name]/`
-3. Add `README.md` with project overview
-4. Convert generated HTML to Markdown with proper formatting
-5. Include source attribution and documentation links
-6. Update root README with new project listing
-7. Commit and push (triggers Context7 re-indexing)
+1. Clone the source repository locally (temporary, for extraction)
+2. Run `@rails-guide-writer` against the cloned project
+3. Create new directory: `[project-name]/`
+4. Move generated `rails-patterns.md` to the new directory
+5. Add `README.md` with project overview and source link
+6. (Optional) Run `@rails-docs-linker` to add Rails documentation links
+7. Delete the cloned source repository
+8. Commit and push (triggers Context7 re-indexing)
 
 ---
 
 **For more information:**
 - Pattern collection: [README.md](./README.md)
 - Context7 library: `/swistaczek/ruby-snippets`
-- Example output: [docs/basecamp-rails-guide.html](./docs/basecamp-rails-guide.html)
+- Example patterns: [once-campfire/rails-patterns.md](./once-campfire/rails-patterns.md), [fizzy/rails-patterns.md](./fizzy/rails-patterns.md)
